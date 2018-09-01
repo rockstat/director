@@ -1,7 +1,5 @@
-
 FMT_JSON = ' FORMAT JSON'
 FMT_JSON_ROW = ' FORMAT JSONEachRow'
-
 
 def events_where():
     return """
@@ -14,9 +12,9 @@ def groups(where):
     return """
         SELECT
             'sources' as group,
-            session_type as param,
+            sess_type as param,
             uniq(uid) AS amount
-        FROM events_v2
+        FROM events
         WHERE
             name = 'session'
             AND {where}
@@ -27,9 +25,9 @@ def groups(where):
 
         SELECT
             'newusers' as group,
-            if(session_num = 1, 'new users', 'returning users') as param,
+            if(sess_num = 1, 'new users', 'returning users') as param,
             uniq(uid) AS amount
-        FROM events_v2
+        FROM events
         WHERE
             name = 'session'
             AND {where}
@@ -39,27 +37,33 @@ def groups(where):
     UNION ALL
 
         SELECT
-            'devices' as group,
-            mdd_device_type as param,
+            'devices' as group,            
+            CASE
+                WHEN uaparser_is_mob == 1 THEN 'smartphone'
+                WHEN uaparser_is_tablet == 1  THEN 'tablet'
+                WHEN uaparser_is_pc == 1  THEN 'desktop'
+                ELSE 'other'
+            END as param,
             uniq(uid) AS amount
-        FROM events_v2
+        FROM events
         WHERE
             name = 'session'
             AND {where}
-        GROUP BY param
+        GROUP BY param, uaparser_is_mob, uaparser_is_tablet, uaparser_is_pc
         ORDER BY amount desc
 
     """.format(where=where)
 
 
-def events(where):
-    return """
+def events(where, step=900):
+    return f"""
         SELECT
             name,
+            (intDiv(toUInt32(dateTime), {step}) * {step}) * 1000  as t,
             count() AS amount
-        FROM events_v2
+        FROM events
         WHERE
             {where}
-        GROUP BY name
+        GROUP BY name, t
         ORDER BY amount desc
     """

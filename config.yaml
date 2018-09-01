@@ -8,25 +8,23 @@ data_dir: "{{DATA_DIR|default('/data')}}"
 default_services: ['mmgeo', 'sxgeo', 'uaparser']
 
 images:
-  # - name: rst/band-base-py
-  #   path: "{{BASE_IMG_PATH|default(IMAGES_PATH+'/band_base_py')}}"
-  - prefix: rst/band-
+  - prefix: rockstat/band-
     collection: true
     base: rockstat/band-base-py
-    path: "{{IMAGES_PATH}}/band_set"
-  - prefix: rst/user-
+    path: "{{IMAGES_PATH|default('images')}}/band_set"
+  - prefix: rockstat/user-
     collection: true
     base: rockstat/band-base-py
-    path: "{{IMAGES_PATH}}/user"
-  - prefix: rst/rockme-
+    path: "{{IMAGES_PATH|default('images')}}/user"
+  - prefix: rockstat/rockme-
     collection: true
-    path: "{{IMAGES_PATH}}/rockme_set"
+    path: "{{IMAGES_PATH|default('images')}}/rockme_set"
 
 # following params will be paseed to image and container builder functions
 container_params:
   network: "{{NETWORK|default('custom')}}"
   memory: 367001600 # limit 350mb
-  bind_ip: "{{BIND_HOST_IP}}"
+  bind_ip: "{{BIND_HOST_IP|default('0.0.0.0')}}"
   env:
     HOST: '0.0.0.0'
     REDIS_DSN: "{{REDIS_DSN|default('redis://redis:6379')}}"
