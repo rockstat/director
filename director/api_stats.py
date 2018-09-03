@@ -12,11 +12,8 @@ ch = ClickHouse()
 async def common_stat(**params):
     where = queries.events_where()
     stat_groups = await ch.select(queries.groups(where) + queries.FMT_JSON)
-
     if stat_groups:
-        stat_groups = ujson.loads(stat_groups)['data']
-        return dict({k: list(g) for k, g in groupby(
-            stat_groups, lambda x: x['group'])})
+        return ujson.loads(stat_groups)['data']
     return {}
 
 
@@ -24,5 +21,4 @@ async def common_stat(**params):
 async def events_stat(**params):
     events_where = queries.events_where()
     stat_events = await ch.select(queries.events(events_where) + queries.FMT_JSON)
-
     return ujson.loads(stat_events)['data'] if stat_events else []

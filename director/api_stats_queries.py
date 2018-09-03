@@ -10,48 +10,50 @@ def events_where():
 
 def groups(where):
     return """
+    SELECT param as name, groupArray((n, v)) as data FROM (
         SELECT
-            'sources' as group,
-            sess_type as param,
+            'sources' as param,
+            sess_type as n,
             uniq(uid) AS v
         FROM events
         WHERE
             events.name = 'session'
             AND {where}
-        GROUP BY param
+        GROUP BY n
         ORDER BY v desc
 
     UNION ALL
 
         SELECT
-            'newusers' as group,
-            if(sess_num == 1, 'new users', 'returning users') as param,
+            'newusers' as param,
+            if(sess_num == 1, 'new users', 'returning users') as n,
             uniq(uid) AS v
         FROM events
         WHERE
             events.name = 'session'
             AND {where}
-        GROUP BY param
+        GROUP BY n
         ORDER BY v desc
 
     UNION ALL
 
         SELECT
-            'devices' as group,            
+            'devices' as param,            
             CASE
                 WHEN uaparser_is_mob == 1 THEN 'smartphone'
                 WHEN uaparser_is_tablet == 1  THEN 'tablet'
                 WHEN uaparser_is_pc == 1  THEN 'desktop'
                 ELSE 'other'
-            END as param,
+            END as n,
             uniq(uid) AS v
         FROM events
         WHERE
             events.name = 'session'
             AND {where}
-        GROUP BY param, uaparser_is_mob, uaparser_is_tablet, uaparser_is_pc
+        GROUP BY n, uaparser_is_mob, uaparser_is_tablet, uaparser_is_pc
         ORDER BY v desc
-
+    )
+    GROUP BY param
     """.format(where=where)
 
 
