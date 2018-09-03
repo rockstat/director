@@ -13,26 +13,26 @@ def groups(where):
         SELECT
             'sources' as group,
             sess_type as param,
-            uniq(uid) AS amount
+            uniq(uid) AS v
         FROM events
         WHERE
-            name = 'session'
+            events.name = 'session'
             AND {where}
         GROUP BY param
-        ORDER BY amount desc
+        ORDER BY v desc
 
     UNION ALL
 
         SELECT
             'newusers' as group,
-            if(sess_num = 1, 'new users', 'returning users') as param,
-            uniq(uid) AS amount
+            if(sess_num == 1, 'new users', 'returning users') as param,
+            uniq(uid) AS v
         FROM events
         WHERE
-            name = 'session'
+            events.name = 'session'
             AND {where}
         GROUP BY param
-        ORDER BY amount desc
+        ORDER BY v desc
 
     UNION ALL
 
@@ -44,26 +44,30 @@ def groups(where):
                 WHEN uaparser_is_pc == 1  THEN 'desktop'
                 ELSE 'other'
             END as param,
-            uniq(uid) AS amount
+            uniq(uid) AS v
         FROM events
         WHERE
-            name = 'session'
+            events.name = 'session'
             AND {where}
         GROUP BY param, uaparser_is_mob, uaparser_is_tablet, uaparser_is_pc
-        ORDER BY amount desc
+        ORDER BY v desc
 
     """.format(where=where)
 
 
 def events(where, step=900):
     return f"""
-        SELECT
-            name,
-            (intDiv(toUInt32(dateTime), {step}) * {step}) * 1000  as t,
-            count() AS amount
-        FROM events
-        WHERE
-            {where}
-        GROUP BY name, t
-        ORDER BY amount desc
+        SELECT name, groupArray((t, v)) as data FROM (
+            SELECT
+                events.name,
+                intDiv(toUInt32(dateTime), {step}) * {step} as t,
+                count() AS v
+            FROM events
+            WHERE
+                {where}
+            GROUP BY events.name, t
+            ORDER BY t
+        )
+        GROUP BY name
+        ORDER BY length(data) DESC
     """

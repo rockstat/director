@@ -9,19 +9,20 @@ ch = ClickHouse()
 
 
 @expose()
-async def web_categories(**params):
-    result = dict(events=[], groups={})
+async def common_stat(**params):
     where = queries.events_where()
     stat_groups = await ch.select(queries.groups(where) + queries.FMT_JSON)
 
     if stat_groups:
         stat_groups = ujson.loads(stat_groups)['data']
-        result['groups'] = {k: list(g) for k, g in groupby(
-            stat_groups, lambda x: x['group'])}
+        return dict({k: list(g) for k, g in groupby(
+            stat_groups, lambda x: x['group'])})
+    return {}
+
+
+@expose()
+async def events_stat(**params):
     events_where = queries.events_where()
     stat_events = await ch.select(queries.events(events_where) + queries.FMT_JSON)
 
-    if stat_events:
-        result['events'] = ujson.loads(stat_events)['data']
-
-    return result
+    return ujson.loads(stat_events)['data'] if stat_events else []
