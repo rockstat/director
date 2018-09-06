@@ -31,7 +31,7 @@ container_params:
     CHP_DSN: "{{CHP_DSN|default('')}}"
     CH_DSN: "{{CH_DSN|default('')}}"
     CHS_DSN: "{{CHS_DSN|default('')}}"
-    JSON_LOGS: JSON_LOGS={{JSON_LOGS|default(1)}}
+    JSON_LOGS: "{{JSON_LOGS|default(1)}}"
   etc_hosts:
     host: "{{HOST_ADDR|default('172.17.0.1')}}"
   

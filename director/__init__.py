@@ -1,13 +1,14 @@
 import band
 from band import settings, logger, app, worker, cleaner
 
-from .state_manager import StateManager, dock, image_navigator
+from .state import *
 from .constants import *
 
 state = StateManager()
 
-from . import api_main
-from . import api_stats
+# Required state
+from .api import stat_api, manager_api
+from .queries import *
 
 @worker()
 async def __state_up():

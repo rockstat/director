@@ -1,24 +1,24 @@
-from prodict import Prodict as pdict
-from .helpers import nn, isn, str2bool, merge_dicts
-import ujson
 import asyncio
-from pprint import pprint
-from collections import defaultdict
+import ujson
+from prodict import Prodict as pdict
 from itertools import count
-from copy import deepcopy
 
 from band import logger, settings, rpc, app
-from band.constants import (NOTIFY_ALIVE, REQUEST_STATUS, OK, FRONTIER_SERVICE,
-                            DIRECTOR_SERVICE)
+from band.constants import (
+    NOTIFY_ALIVE, REQUEST_STATUS, OK, FRONTIER_SERVICE,
+    DIRECTOR_SERVICE)
 
-from .band_config import BandConfig
-from .docker_manager import DockerManager
-from .constants import (STARTED_SET, SERVICE_TIMEOUT, DEFAULT_COL, DEFAULT_ROW,
-                        STATUS_RESTARTING, STATUS_REMOVING, STATUS_STARTING,
-                        STATUS_STOPPING, SHARED_CONFIG_KEY)
-from .state_ctx import StateCtx
-from .state_service import ServiceState
-from .image_navigator import ImageNavigator
+from ..helpers import nn, merge_dicts
+from ..band_config import BandConfig
+from ..constants import (
+    STARTED_SET, SERVICE_TIMEOUT, DEFAULT_COL, DEFAULT_ROW,
+    STATUS_RESTARTING, STATUS_REMOVING, STATUS_STARTING,
+    STATUS_STOPPING, SHARED_CONFIG_KEY)
+
+from ..docker_manager import DockerManager
+from .context import StateCtx
+from .service import ServiceState
+from ..image_navigator import ImageNavigator
 
 image_navigator = ImageNavigator(**settings)
 band_config = BandConfig(**settings)
@@ -59,10 +59,10 @@ class StateManager:
             if container.running and container.native:
                 await app['scheduler'].spawn(
                     self.request_app_state(container.name))
-        
+
         # clean state
         await app['scheduler'].spawn(self.clean_worker())
-        
+
     async def clean_worker(self):
         for num in count():
             # Remove expired services
@@ -118,7 +118,7 @@ class StateManager:
             wanted_pos = dict(col=params.pos.col, row=params.pos.row)
 
         if name not in self._state:
-            logger.debug('loading state for %s', name)
+            logger.debug('loading state', name=name)
             config = await self.load_config(name)
             meta = await image_navigator.image_meta(name)
 
@@ -295,11 +295,11 @@ class StateManager:
         config = await band_config.load_config(name)
         if name == SHARED_CONFIG_KEY and config:
             self._shared_config = config
-        logger.debug('loaded config %s: %s', name, config)
+        logger.debug('loaded config', name=name, config=config)
         return config
 
     def save_config(self, name, config):
-        logger.info('saving "%s" config %s', name, config)
+        logger.info('saving', name=name, config=config)
         job = app['scheduler'].spawn(band_config.save_config(name, config))
         asyncio.ensure_future(job)
 

@@ -67,7 +67,7 @@ class DockerManager():
             if container:
                 return BandContainer(container)
         except DockerError as e:
-            logger.warn("Fetched exception %s: %s", e.status, e.message)
+            logger.warn("Fetched exception", status=e.status, message=e.message)
 
         # return (await self.containers()).get(name, None)
 
@@ -126,8 +126,8 @@ class DockerManager():
 
     async def create_image(self, img, img_options):
         logger.debug(
-            f">>> Building image {img.name} from {img.path}. img_options: %s",
-            img_options)
+            f">>> Building image {img.name} from {img.path}. img_options",
+            img_options=img_options)
         async with img.create(img_options) as builder:
             progress = Prodict()
             struct = builder.struct()
@@ -137,26 +137,26 @@ class DockerManager():
                     chunk = Prodict.from_dict(chunk)
                     if chunk.aux:
                         struct.id = chunk.aux.ID
-                        logger.debug('%s', chunk)
+                        logger.debug('chunk', chunk=chunk)
                     elif chunk.status and chunk.id:
                         progress[chunk.id] = chunk
                         if time() - last > 1:
-                            logger.info("\n%s", progress)
+                            logger.info("\nprogress", progress=progress)
                             last = time()
                     elif chunk.stream:
-                        # logger.debug('%s', chunk)
+                        # logger.debug('chunk', chunk=chunk)
                         step = re.search(r'Step\s(\d+)\/(\d+)', chunk.stream)
                         if step:
-                            logger.debug('Step %s [%s]', *step.groups())
+                            logger.debug('Step ', groups=step.groups())
                     else:
-                        logger.debug('%s', chunk)
+                        logger.debug('chunk', chunk=chunk)
                 else:
-                    logger.debug('chunk: %s %s', type(chunk), chunk)
-            logger.info('image created %s', struct.id)
+                    logger.debug('chunk', type=type(chunk), chunk=chunk)
+            logger.info('image created', struct_id=struct.id)
             return img.set_data(await self.dc.images.get(img.name))
 
     async def run_container(self, name, env={}, nocache=False, auto_remove=True, **kwargs):
-        logger.info('called run container with: %s. nocache: %s, kwargs: %s', env, nocache, kwargs)
+        logger.info('called run container', env=env, nocache=nocache, kwargs=kwargs)
         image_options = dict(nocache=nocache)
         container_options = dict(auto_remove=auto_remove)
         

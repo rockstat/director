@@ -3,8 +3,8 @@ from typing import List, Dict
 from time import time
 from random import randint
 from collections import deque
-from .constants import SERVICE_TIMEOUT, STATUS_RUNNING, STATUS_STARTING, STATUS_REMOVING
-from .helpers import nn, isn, str2bool
+from ..constants import SERVICE_TIMEOUT, STATUS_RUNNING, STATUS_STARTING, STATUS_REMOVING
+from ..helpers import nn, isn, str2bool
 from band import logger, app
 
 
@@ -55,7 +55,7 @@ class ServiceState(pdict):
             
 
     def clean_status(self):
-        logger.debug('restoring state of %s', self.name)
+        logger.debug('restoring state', name=self.name)
         self._meta = pdict()
         self._app = pdict()
         self._app_ts = None

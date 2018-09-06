@@ -1,20 +1,22 @@
-from asyncio import sleep
-from collections import defaultdict, deque
-from prodict import Prodict as pdict
-from time import time
 import asyncio
-import ujson
-import copy
+from prodict import Prodict as pdict
 
-from band import settings, dome, rpc, logger, app, run_task, expose
-from band.constants import NOTIFY_ALIVE, REQUEST_STATUS, OK, FRONTIER_SERVICE, DIRECTOR_SERVICE
+from band import settings, rpc, logger, expose
+from band.constants import (
+    NOTIFY_ALIVE, REQUEST_STATUS, OK,
+    FRONTIER_SERVICE, DIRECTOR_SERVICE)
 
-from .structs import ServicePostion
-from .constants import STATUS_RUNNING, STARTED_SET, SHARED_CONFIG_KEY
-from .helpers import merge, str2bool
-from . import dock, state, image_navigator
+from ..constants import (
+    STATUS_RUNNING, STARTED_SET,
+    SHARED_CONFIG_KEY)
+from ..structs import ServicePostion
+from ..helpers import merge, str2bool
+from .. import dock, state, image_navigator
 
-from pprint import pprint
+
+"""
+Band ecosystem methods
+"""
 
 
 @expose(path='/state')
@@ -32,13 +34,15 @@ async def get_state(name=None, prop=None):
     return list(state.state.keys())
 
 
-@expose(name='list')
-async def lst(**params):
+@expose(path='/show/{name}')
+async def show(name, **params):
     """
-    Containers list with status information
+    Returns container details
     """
-    return list(
-        [fs for fs in [s.full_state() for s in state.values()] if fs.state])
+    container = await dock.get(name)
+    if not container:
+        return 404
+    return container and container.full_state()
 
 
 @expose()
@@ -50,7 +54,7 @@ async def registrations(**params):
     return state.registrations()
 
 
-@dome.expose(name=NOTIFY_ALIVE)
+@expose(name=NOTIFY_ALIVE)
 async def status_receiver(name, **params):
     """
     Listen for services promotions then ask their statuses.
@@ -59,26 +63,7 @@ async def status_receiver(name, **params):
     await state.request_app_state(name)
 
 
-@dome.expose(path='/show/{name}')
-async def show(name, **params):
-    """
-    Returns container details
-    """
-    container = await dock.get(name)
-    if not container:
-        return 404
-    return container and container.full_state()
-
-
-@dome.expose()
-async def list_images(**params):
-    """
-    Available images list
-    """
-    return await image_navigator.lst()
-
-
-@dome.expose(path='/ask_state/{name}')
+@expose(path='/ask_state/{name}')
 async def ask_state(name, **params):
     """
     Ask service state
@@ -86,7 +71,7 @@ async def ask_state(name, **params):
     return await rpc.request(name, REQUEST_STATUS)
 
 
-@dome.expose(path='/call/{name}/{method}')
+@expose(path='/call/{name}/{method}')
 async def call(name, method, **params):
     """
     Call service method
@@ -94,7 +79,24 @@ async def call(name, method, **params):
     return await rpc.request(name, method, **params)
 
 
-@dome.expose(path='/run/{name}')
+"""
+Images methods
+"""
+
+
+@expose()
+async def list_images(**params):
+    """
+    Available images list
+    """
+    return await image_navigator.lst()
+
+"""
+Containers management
+"""
+
+
+@expose(path='/run/{name}')
 async def run(name, **params):
     """
     Create image and run new container with service
@@ -104,12 +106,12 @@ async def run(name, **params):
 
     if not image_navigator.is_native(name):
         return 404
-    logger.debug('Called api.run with: %s', params)
+    logger.debug('Called api.run with', params=params)
     # Build options
     build_opts = {}
 
     # if 'env' in params and isinstance(params.env, dict):
-        # build_opts['env'] = params['env']
+    # build_opts['env'] = params['env']
     if 'nocache' in params:
         build_opts['nocache'] = str2bool(params['nocache'])
     if 'auto_remove' in params:
@@ -123,15 +125,15 @@ async def run(name, **params):
 
     # Get / create
     srv = await state.get(name, params=params)
-    logger.info('request with params: %s. Using config: %s', params,
-                srv.config)
+    logger.info('request with params', params=params,
+                srv_config=srv.config)
 
     # save params and state only if successfully starter
     svc = await state.run_service(name, no_wait=True)
     return srv.full_state()
 
 
-@dome.expose()
+@expose()
 async def rebuild_all(**kwargs):
     """
     Rebuild all controlled containers
@@ -141,7 +143,7 @@ async def rebuild_all(**kwargs):
     return 200
 
 
-@dome.expose(path='/restart/{name}')
+@expose(path='/restart/{name}')
 async def restart(name, **params):
     """
     Restart service
@@ -150,7 +152,7 @@ async def restart(name, **params):
     return svc.full_state()
 
 
-@dome.expose(path='/stop/{name}')
+@expose(path='/stop/{name}')
 async def stop(name, **params):
     """
     Stop container. Only for persistent containers
@@ -163,7 +165,7 @@ async def stop(name, **params):
     return svc.full_state()
 
 
-@dome.expose(path='/start/{name}')
+@expose(path='/start/{name}')
 async def start(name, **params):
     """
     Start
@@ -175,7 +177,7 @@ async def start(name, **params):
     return svc.full_state()
 
 
-@dome.expose(path='/rm/{name}')
+@expose(path='/rm/{name}')
 async def remove(name, **params):
     """
     Unload/remove service
@@ -188,11 +190,11 @@ async def remove(name, **params):
 
 
 """
-####### Services configuration
+Services configuration
 """
 
 
-@dome.expose()
+@expose()
 async def configs_list(**params):
     """
     List of saved services configurations
@@ -200,7 +202,7 @@ async def configs_list(**params):
     return await state.configs()
 
 
-@dome.expose(path='/update_config/{name}')
+@expose(path='/update_config/{name}')
 async def update_config(name, **params):
     """
     Updates service configuration.
@@ -210,7 +212,7 @@ async def update_config(name, **params):
     return await state.update_config(name, params)
 
 
-@dome.expose(path='/get_config/{name}')
+@expose(path='/get_config/{name}')
 async def get_config(name, **params):
     """
     Returns service config
