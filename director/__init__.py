@@ -1,5 +1,5 @@
 import band
-from band import settings, logger, app, worker, cleaner
+from band import settings, logger, app, worker, unloader
 
 from .state import *
 from .constants import *
@@ -14,7 +14,7 @@ from .queries import *
 async def __state_up():
     await state.initialize()
 
-@cleaner()
+@unloader()
 async def __state_down():
     await state.unload()
 
