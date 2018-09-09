@@ -30,9 +30,10 @@ def decode(name):
 
 class BandConfig:
     def __init__(self, *args, **kwargs):
-        pass
+        self.redis_pool = None
 
     async def initialize(self):
+        logger.info("Initializing BandConfig")
         self.redis_pool = await redis_factory.create_pool()
         logger.debug('Band state configs holder started')
 

@@ -18,6 +18,10 @@ from .. import dock, state, image_navigator
 Band ecosystem methods
 """
 
+@expose(path='/list')
+async def states_list():
+    return list(svc.full_state() for svc in state.values() if svc.is_active())
+
 
 @expose(path='/state')
 async def get_state(name=None, prop=None):
