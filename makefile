@@ -12,9 +12,9 @@ watch:
 dev:
 	bash -c "/usr/bin/env python3 -m \"$${PWD##*/}\" && exit 0"
 
-patch:
+bump-patch:
 	bumpversion patch
 
-minor:
+bump-minor:
 	bumpversion minor
 
