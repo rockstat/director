@@ -10,15 +10,13 @@ default_services: ['mmgeo', 'sxgeo', 'uaparser']
 images:
   - prefix: rockstat/band-
     collection: true
-    base: rockstat/band-base-py
-    path: "{{IMAGES_PATH|default('images')}}/band_set"
+    path: "{{IMAGES_PATH|default('/images')}}/band_set"
   - prefix: rockstat/user-
     collection: true
-    base: rockstat/band-base-py
-    path: "{{IMAGES_PATH|default('images')}}/user"
+    path: "{{IMAGES_PATH|default('/images')}}/user"
   - prefix: rockstat/rockme-
     collection: true
-    path: "{{IMAGES_PATH|default('images')}}/rockme_set"
+    path: "{{IMAGES_PATH|default('/images')}}/rockme_set"
 
 # following params will be paseed to image and container builder functions
 container_params:
