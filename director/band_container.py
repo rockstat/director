@@ -29,8 +29,8 @@ class BandContainerBuilder():
             'Env': [f"{k}={v}" for k, v in env.items()],
             'StopSignal': 'SIGTERM',
             'HostConfig': {
-                'AutoRemove': auto_remove,
-                # 'RestartPolicy': {'Name': 'unless-stopped'},
+                # 'AutoRemove': auto_remove,
+                'RestartPolicy': {'Name': 'unless-stopped'},
                 'PortBindings': {
                     p: [{
                         'HostIp': bind_ip,
@@ -38,8 +38,7 @@ class BandContainerBuilder():
                     }]
                     for hp, p in zip(host_ports, self.image.ports)
                 },
-                'ExtraHosts':
-                [f"{host}:{ip}" for host, ip in etc_hosts.items()],
+                'ExtraHosts': [f"{host}:{ip}" for host, ip in etc_hosts.items()],
                 'NetworkMode': network,
                 'Memory': memory
             }
