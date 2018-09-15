@@ -99,7 +99,7 @@ class BandContainer():
 
     @property
     def running(self):
-        return self.state == STATUS_RUNNING
+        return self.status == STATUS_RUNNING
 
     @property
     def ports(self):
@@ -149,7 +149,7 @@ class BandContainer():
     @property
     def short_info(self):
         return Prodict(
-            name=self.name, short_id=self.short_id, state=self.state)
+            name=self.name, short_id=self.short_id, state=self.status, status=self.status)
 
     def full_state(self):
         started_at = self.started_at or 0
@@ -167,8 +167,8 @@ class BandContainer():
             started_at=start_ts * 1000,
             created=self.create_ts,
             uptime=uptime_sec * 1000,
-            state=self.state,
-            status=self.state
+            state=self.status,
+            status=self.status
         )
 
     def __getattr__(self, name):
