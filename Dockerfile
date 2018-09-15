@@ -1,5 +1,5 @@
 FROM rockstat/band-base-py
-LABEL maintainer="Dmitry Rodin <madiedinro@gmail.com>" band.director.version=0.4.1
+LABEL maintainer="Dmitry Rodin <madiedinro@gmail.com>" band.director.version=0.4.2
 
 WORKDIR /usr/src/services
 

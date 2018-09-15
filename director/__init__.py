@@ -20,5 +20,5 @@ async def __state_down():
     logger.debug('Director shutdown worker started')
     await state.unload()
 
-__VERSION__ = '0.4.1'
+__VERSION__ = '0.4.2'
 
