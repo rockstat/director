@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 #cachebust
-ARG RELEASE=0.4.0
+ARG RELEASE=0.4.1
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
