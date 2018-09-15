@@ -20,7 +20,7 @@ Band ecosystem methods
 
 @expose(path='/list')
 async def states_list():
-    return list(svc.full_state() for svc in state.values() if svc.is_active())
+    return list(svc.full_state() for svc in state.values() if svc.is_active() or svc.is_local())
 
 
 @expose(path='/state')

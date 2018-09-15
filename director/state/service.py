@@ -52,7 +52,6 @@ class ServiceState(pdict):
         self._name = name
         self._title = name.replace('_', ' ').title()
         self.clean_status()
-            
 
     def clean_status(self):
         logger.debug('restoring state', name=self.name)
@@ -139,6 +138,9 @@ class ServiceState(pdict):
     def native(self):
         return self._native
 
+    def is_local(self):
+        return bool(self.dockstate)
+
     def is_active(self):
         ds = self.dockstate
         if ds and ds.state == STATUS_RUNNING:
@@ -203,7 +205,8 @@ class ServiceState(pdict):
         pass
 
     def set_methods(self, methods):
-        if not methods: return
+        if not methods:
+            return
         self._methods = []
         for method in methods:
             rec = method.copy()

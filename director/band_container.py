@@ -1,8 +1,13 @@
+import arrow
 from prodict import Prodict
 from pprint import pprint
 from typing import List
+
+from band import logger
+
 from .constants import STATUS_RUNNING
-import arrow
+
+
 
 
 class BCP(Prodict):
@@ -82,10 +87,15 @@ class BandContainer():
         return self.d.Id[:12]
 
     @property
-    def state(self):
+    def status(self):
         if isinstance(self.d.State, dict):
             return self.d.State.Status
         return self.d.State
+
+    @property
+    def state(self):
+        logger.warn("called deprecated method BandContainer.state")
+        return self.status
 
     @property
     def running(self):
@@ -157,7 +167,9 @@ class BandContainer():
             started_at=start_ts * 1000,
             created=self.create_ts,
             uptime=uptime_sec * 1000,
-            state=self.state)
+            state=self.state,
+            status=self.state
+        )
 
     def __getattr__(self, name):
         if hasattr(self.c, name):
