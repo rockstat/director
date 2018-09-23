@@ -23,13 +23,7 @@ container_params:
   network: "{{NETWORK|default('custom')}}"
   memory: 367001600 # limit 350mb
   bind_ip: "{{BIND_HOST_IP|default('0.0.0.0')}}"
-  env:
-    HOST: '0.0.0.0'
-    REDIS_DSN: "{{REDIS_DSN|default('redis://redis:6379')}}"
-    CHP_DSN: "{{CHP_DSN|default('')}}"
-    CH_DSN: "{{CH_DSN|default('')}}"
-    CHS_DSN: "{{CHS_DSN|default('')}}"
-    JSON_LOGS: "{{JSON_LOGS|default(1)}}"
+  env: {{ENCODED_ENV}}
   etc_hosts:
     host: "{{HOST_ADDR|default('172.17.0.1')}}"
   

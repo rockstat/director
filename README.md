@@ -2,6 +2,25 @@
 
 ## Running
 
+### Local with watching
+
+start redis
+
+```
+docker run -d \
+    --restart unless-stopped \
+    --network custom \
+    --name redis --hostname redis \
+    -p 127.0.0.1:6379:6379 \
+    redis:4-alpine
+```
+
+install tools
+
+```
+go get github.com/cespare/reflex
+```
+
 ### Start in docker
 
 ```

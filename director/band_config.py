@@ -1,5 +1,4 @@
 import ujson
-import plyvel
 import yaml
 import time
 import os
