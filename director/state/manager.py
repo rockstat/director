@@ -33,7 +33,7 @@ class StateManager:
         self._state = dict()
         self._dock = None
         self._shared_config = dict()
-        self.last_key = ''
+        self.registrations_hash = ''
 
     """
     Lifecycle functions
@@ -78,7 +78,7 @@ class StateManager:
 
     async def handle_auto_start(self):
         for item in await self.should_start():
-            svc = await s.get(item)
+            svc = await self.get(item)
             if not svc.is_active() and svc.native:
                 await self.run_service(svc.name)
             # if not (item in state and ().is_active()):
@@ -261,16 +261,17 @@ class StateManager:
         # Payload for frontend servoce
         if name == FRONTIER_SERVICE:
             payload.update(self.registrations())
+            payload.update(dict(state_hash=self.registrations_hash))
 
         # Loading state, config, meta
         status = await rpc.request(name, REQUEST_STATUS, **payload)
         svc.set_appstate(status)
 
     async def check_regs_changed(self):
-        key = hash(ujson.dumps(self.registrations()))
+        new_hash = hash(ujson.dumps(self.registrations()))
         # If registrations changed frontier shold know about that
-        if key != self.last_key:
-            self.last_key = key
+        if new_hash != self.registrations_hash:
+            self.registrations_hash = new_hash
             await self.request_app_state(FRONTIER_SERVICE)
 
     def registrations(self):

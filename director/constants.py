@@ -5,7 +5,7 @@ STATUS_REMOVING = 'removing'
 STATUS_STOPPING = 'stopping'
 SYSTEM_CONTAINERS = [
     'chproxy', 'grafana', 'anaconda', 'openvpn', 'theia', 'heavyload',
-    'frontier'
+    'front'
 ]
 DEF_LABELS = {'inband': 'inband'}
 STARTED_SET = 'started'

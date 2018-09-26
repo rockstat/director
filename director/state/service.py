@@ -58,7 +58,6 @@ class ServiceState(pdict):
         self._meta = pdict()
         self._app = pdict()
         self._app_ts = None
-        self._methods = []
         self._status_override = None
         self._dock = pdict()
         self._dock_ts = None
@@ -77,11 +76,9 @@ class ServiceState(pdict):
         docker = self.dockstate
         appdata = self.appstate
         state = None
-        running = None
         uptime = None
         inband = False
         if docker:
-            running = docker.running
             state = docker.state
             inband = docker.inband
             if appdata and appdata.app_uptime:
@@ -89,7 +86,6 @@ class ServiceState(pdict):
             else:
                 uptime = docker.uptime
         elif appdata and appdata.app_state == STATUS_RUNNING:
-            running = True
             state = STATUS_RUNNING
             uptime = appdata.app_uptime
 
