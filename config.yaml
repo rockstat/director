@@ -5,7 +5,7 @@ redis_dsn: "{{REDIS_DSN|default('redis://redis:6379')}}"
 ch_dsn: "{{CHP_DSN|default('http://default:default@host:9090')}}"
 data_dir: "{{DATA_DIR|default('/data')}}"
 # initial
-default_services: ['mmgeo', 'sxgeo', 'uaparser']
+initial_startup: {{INITIAL_STARTUP|default('[]')}}
 
 images:
   - prefix: rockstat/band-

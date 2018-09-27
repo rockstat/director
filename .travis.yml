@@ -1,31 +1,38 @@
 sudo: required
 dist: trusty
 
+branches:
+  only:
+  - master
+  - dev
+
 env:
   global:
   - PROJECT_NAME=director
   - ORG=rockstat
   - IMAGE_NAME=$ORG/$PROJECT_NAME
+  - TAG="$( [ $TRAVIS_BRANCH == 'master' ] && echo latest || echo $TRAVIS_BRANCH )"
 
 services:
 - docker
 
 script:
+- cat Dockerfile | sed  "s/\:latest/\:$TAG/g" > Dockerfile.tag
 - docker build -t $PROJECT_NAME .
 
 after_script:
 - docker images
 
 before_deploy:
-- docker tag $PROJECT_NAME $IMAGE_NAME
+- docker tag $PROJECT_NAME $IMAGE_NAME:$TAG
 - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 
 deploy:
-  provider: script
+- provider: script
   skip_cleanup: true
-  script: docker push "$IMAGE_NAME"
+  script: docker push "$IMAGE_NAME:$TAG"
   on:
-    branch: master
+    all_branches: true
 
 # helpful links
 # https://medium.com/mobileforgood/patterns-for-continuous-integration-with-docker-on-travis-ci-71857fff14c5

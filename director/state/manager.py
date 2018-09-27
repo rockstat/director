@@ -44,27 +44,27 @@ class StateManager:
         await image_navigator.load()
         await self.load_config(SHARED_CONFIG_KEY)
         await self.resolve_docstatus_all()
-        # check state exists
+        
+        # initial fill autostart 
         started_present = await band_config.set_exists(STARTED_SET)
         if not started_present:
-            await band_config.set_add(STARTED_SET, *settings.default_services)
+            await band_config.set_add(STARTED_SET, *settings.initial_startup)
 
-        """
-        Onstart tasks: loaders, readers, etc...
-        """
-
-        # starting config
         # looking for containers to request status
         for container in await dock.containers(struct=list):
             if container.running and container.native:
                 await app['scheduler'].spawn(
                     self.request_app_state(container.name))
-
-        # clean state
+        
+        # spawning state cleaner job
         await app['scheduler'].spawn(self.clean_worker())
 
+        # handling autostart
+        await self.handle_auto_start()
+        
+
     async def clean_worker(self):
-        for num in count():
+        while True:
             # Remove expired services
             try:
                 await asyncio.sleep(5)
@@ -77,9 +77,11 @@ class StateManager:
                 await asyncio.sleep(1)
 
     async def handle_auto_start(self):
-        for item in await self.should_start():
+        services = await self.should_start()
+        logger.info("Autostarting services", items=services)
+        for item in services:
             svc = await self.get(item)
-            if not svc.is_active() and svc.native:
+            if not svc.is_active() and image_navigator.is_native(svc.name):
                 await self.run_service(svc.name)
             # if not (item in state and ().is_active()):
             # asyncio.ensure_future(run(item))
