@@ -22,7 +22,7 @@ images:
 container_params:
   network: "{{NETWORK|default('custom')}}"
   memory: 367001600 # limit 350mb
-  bind_ip: "{{BIND_HOST_IP|default('0.0.0.0')}}"
+  bind_ip: "{{BIND_HOST_ADDR|default('127.0.0.1')}}"
   env: {{ENCODED_ENV}}
   etc_hosts:
     host: "{{HOST_ADDR|default('172.17.0.1')}}"
