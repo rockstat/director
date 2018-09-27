@@ -1,8 +1,3 @@
-HTTP_LISTEN=8089
-SOCK_LISTEN=5000
-CH_DSN=tcp://stage.rstat.org:9000/?database=stats
-
-VERSION := 0.4.2
 REPO := rockstat/director
 BR := $(shell git branch | grep \* | cut -d ' ' -f2-)
 
