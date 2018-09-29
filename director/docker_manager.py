@@ -35,6 +35,7 @@ class DockerManager():
     def __init__(self,
                  images,
                  container_params,
+                 image_params,
                  image_navigator,
                  start_port=8900,
                  end_port=8999,
@@ -51,6 +52,7 @@ class DockerManager():
         self.reserved_ports = set()
         # common container params
         self.container_params = pdict.from_dict(container_params)
+        self.image_params = pdict.from_dict(image_params)
         # start load images
 
     async def containers(self, struct=dict, status=None, fullinfo=False):
@@ -177,7 +179,10 @@ class DockerManager():
     async def run_container(self, name, env={}, nocache=False, auto_remove=True, **kwargs):
         logger.info('called run container', env=env,
                     nocache=nocache, kwargs=kwargs)
-        image_options = dict(nocache=nocache)
+
+        
+        image_options = {'nocache': nocache, **self.image_params}
+        print(image_options, self.image_params)
         container_options = dict(auto_remove=auto_remove)
 
         # building image

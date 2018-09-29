@@ -14,3 +14,6 @@ DEFAULT_COL = 0
 DEFAULT_ROW = 2
 
 SHARED_CONFIG_KEY = '__shared__'
+
+DEFAULT_DOCKERFILE = 'Dockerfile'
+GIT_IGNORE_POSTFIX = '.gignore'

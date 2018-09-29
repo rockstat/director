@@ -19,6 +19,9 @@ images:
     path: "{{IMAGES_PATH|default('/images')}}/rockme_set"
 
 # following params will be paseed to image and container builder functions
+image_params:
+  band-base-py-image: "{{BAND_PY_IMAGE}}"
+
 container_params:
   network: "{{NETWORK|default('custom')}}"
   memory: 367001600 # limit 350mb
