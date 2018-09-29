@@ -25,13 +25,13 @@ class BandImageBuilder:
         with open(f'{path}/{orig}') as f:
             content = f.read()
             for k, v in self.img_options.items():
-                print('--- k', k, v)
                 content = content.replace('{' + k + '}', str(v))
             with open(f'{path}/{override}', 'w') as nf:
                 nf.write(content)
 
     def struct(self):
         return pdict.from_dict({
+            'tag': self.img.name,
             'fileobj': self.p.stdout,
             'encoding': 'identity',
             'path_dockerfile': self.dockerfile,
