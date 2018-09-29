@@ -18,7 +18,7 @@ services:
 
 script:
 - cat Dockerfile | sed  "s/\:latest/\:$TAG/g" > Dockerfile.tag
-- docker build -t $PROJECT_NAME .
+- docker build -t $PROJECT_NAME -f Dockerfile.tag .
 
 after_script:
 - docker images

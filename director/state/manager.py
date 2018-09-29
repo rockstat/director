@@ -271,7 +271,7 @@ class StateManager:
 
     async def check_regs_changed(self):
         new_hash = hash(ujson.dumps(self.registrations()))
-        # If registrations changed frontier shold know about that
+        # If registrations changed front shold know about that
         if new_hash != self.registrations_hash:
             self.registrations_hash = new_hash
             await self.request_app_state(FRONTIER_SERVICE)
