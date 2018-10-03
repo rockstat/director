@@ -2,6 +2,9 @@ from inflection import underscore
 from prodict import Prodict
 
 
+def def_val(val, def_val):
+    return val if val != None else def_val
+
 def nn(arg):
     """ not nil """
     return arg != None
@@ -16,8 +19,12 @@ def tar_image_cmd(path):
     return ['tar', '-C', path, '-c', '-X', '.dockerignore', '.']
 
 
-def str2bool(v):
-    return v.lower() in ("yes", "true", "t", "1")
+def req_to_bool(v) -> None or bool:
+    if v == None:
+        return v
+    if isinstance(v, bool):
+        return bool
+    return str(v).lower() in ("yes", "true", "t", "1")
 
 
 def underdict(obj):

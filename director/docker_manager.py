@@ -17,7 +17,7 @@ from band import logger
 from .image_navigator import ImageNavigator
 from .band_container import BandContainer, BandContainerBuilder
 from .constants import DEF_LABELS, STATUS_RUNNING
-from .helpers import str2bool
+from .helpers import req_to_bool, def_val
 
 
 class DockerManager():
@@ -176,14 +176,16 @@ class DockerManager():
             logger.info('image created', struct_id=struct.id)
             return img.set_data(await self.dc.images.get(img.name))
 
-    async def run_container(self, name, env={}, nocache=False, auto_remove=True, **kwargs):
-        logger.info('called run container', env=env,
-                    nocache=nocache, kwargs=kwargs)
+    async def run_container(self, name, env={}, nocache=None, auto_remove=None, **kwargs):
 
-        
-        image_options = {'nocache': nocache, **self.image_params}
-        print(image_options, self.image_params)
-        container_options = dict(auto_remove=auto_remove)
+        image_options = dict(
+            nocache=def_val(nocache, False),
+            **self.image_params
+        )
+        container_options = dict(auto_remove=def_val(auto_remove, False))
+
+        logger.info('called run container (kwargs will not used)', env=env,
+                    func_args=dict(auto_remove=auto_remove, nocache=nocache, kwargs=kwargs), image_options=image_options, container_options=container_options)
 
         # building image
         service_img = self.image_navigator[name]

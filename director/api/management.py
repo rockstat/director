@@ -1,6 +1,6 @@
 import asyncio
 from prodict import Prodict as pdict
-
+from typing import List, Dict
 from band import settings, rpc, logger, expose
 from band.constants import (
     NOTIFY_ALIVE, REQUEST_STATUS, OK,
@@ -9,14 +9,39 @@ from band.constants import (
 from ..constants import (
     STATUS_RUNNING, STARTED_SET,
     SHARED_CONFIG_KEY)
-from ..structs import ServicePostion
-from ..helpers import merge, str2bool
+from ..structs import RunParams, BuildOptions, ServicePostion
+from ..helpers import merge, req_to_bool
 from .. import dock, state, image_navigator
+
+
+"""
+Request helpers
+"""
+
+def build_options_from_req(params: Dict):
+    """
+    Build BuildOptions from request params
+    """
+    return BuildOptions(
+        nocache=req_to_bool(params.get('nocache', None)),
+        auto_remove=req_to_bool(params.get('auto_remove', None)),
+        env=pdict.from_dict(params.get('env', {}))
+    )
+
+
+def build_run_params_from_req(params: pdict):
+    return RunParams(
+        pos=ServicePostion(
+            *params['pos'].split('x')
+        ) if ('pos' in params) else None,
+        build_opts=build_options_from_req(params)
+    )
 
 
 """
 Band ecosystem methods
 """
+
 
 @expose(path='/list')
 async def states_list():
@@ -101,40 +126,23 @@ Containers management
 
 
 @expose(path='/run/{name}')
-async def run(name, **params):
+async def run(name, **req_params):
     """
     Create image and run new container with service
     """
 
-    params = pdict(**params)
-
     if not image_navigator.is_native(name):
         return 404
-    logger.debug('Called api.run with', params=params)
-    # Build options
-    build_opts = {}
 
-    # if 'env' in params and isinstance(params.env, dict):
-    # build_opts['env'] = params['env']
-    if 'nocache' in params:
-        build_opts['nocache'] = str2bool(params['nocache'])
-    if 'auto_remove' in params:
-        build_opts['auto_remove'] = str2bool(params['auto_remove'])
+    logger.debug('Called api.run with', params=req_params)
+    params=build_run_params_from_req(req_params)
 
-    params['build_options'] = build_opts
-
-    # Position on dashboard
-    if params.pos:
-        params.pos = ServicePostion(*params.pos.split('x'))
-
-    # Get / create
-    srv = await state.get(name, params=params)
+    svc=await state.get(name, params=params)
     logger.info('request with params', params=params,
-                srv_config=srv.config)
+                srv_config=svc.config)
 
-    # save params and state only if successfully starter
-    svc = await state.run_service(name, no_wait=True)
-    return srv.full_state()
+    svc=await state.run_service(name, no_wait=True)
+    return svc.full_state()
 
 
 @expose()
@@ -152,7 +160,7 @@ async def restart(name, **params):
     """
     Restart service
     """
-    svc = await state.restart_service(name, no_wait=True)
+    svc=await state.restart_service(name, no_wait=True)
     return svc.full_state()
 
 
@@ -165,7 +173,7 @@ async def stop(name, **params):
     if not state.is_exists(name):
         return 404
     # executing main action
-    svc = await state.stop_service(name, no_wait=True)
+    svc=await state.stop_service(name, no_wait=True)
     return svc.full_state()
 
 
@@ -177,7 +185,7 @@ async def start(name, **params):
     if not state.is_exists(name):
         return 404
     # executing main action
-    svc = await state.start_service(name, no_wait=True)
+    svc=await state.start_service(name, no_wait=True)
     return svc.full_state()
 
 
@@ -189,7 +197,7 @@ async def remove(name, **params):
     # check container exists
     if not state.is_exists(name):
         return 404
-    svc = await state.remove_service(name, no_wait=True)
+    svc=await state.remove_service(name, no_wait=True)
     return svc.full_state()
 
 

@@ -4,7 +4,7 @@ from time import time
 from random import randint
 from collections import deque
 from ..constants import SERVICE_TIMEOUT, STATUS_RUNNING, STATUS_STARTING, STATUS_REMOVING
-from ..helpers import nn, isn, str2bool
+from ..helpers import nn, isn, req_to_bool
 from band import logger, app
 
 
