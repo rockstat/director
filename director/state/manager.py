@@ -180,8 +180,10 @@ class StateManager:
         env.update(svc.env)
         await dock.run_container(name, env=env, **svc.build_options)
         await band_config.set_add(STARTED_SET, name)
-        logger.debug('Svc', svc=svc)
+        logger.debug('svc', svc=dict(bo=svc.build_options, e=svc.env))
+        logger.debug('saving config')
         svc.save_config()
+        logger.debug('resolving svc status')
         await self.resolve_docstatus(name)
 
     async def remove_service(self, name, no_wait=False):
