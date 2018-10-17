@@ -1,9 +1,10 @@
 import asyncio
 import ujson
-from band import ClickHouse, expose, logger, settings
+from band import expose, logger, settings
+from simplech import AsyncClickHouse
 from .. import stat_queries
 
-ch = ClickHouse()
+ch = AsyncClickHouse()
 
 
 @expose()
