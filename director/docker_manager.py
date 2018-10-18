@@ -162,18 +162,18 @@ class DockerManager():
                     elif chunk.status and chunk.id:
                         progress[chunk.id] = chunk
                         if time() - last > 1:
-                            logger.info("\nprogress", progress=progress)
+                            logger.info("\nDocker build progress", progress=progress)
                             last = time()
                     elif chunk.stream:
                         # logger.debug('chunk', chunk=chunk)
                         step = re.search(r'Step\s(\d+)\/(\d+)', chunk.stream)
                         if step:
-                            logger.debug('Step ', groups=step.groups())
+                            logger.debug('Docker build step ', groups=step.groups())
                     else:
-                        logger.debug('chunk', chunk=chunk)
+                        logger.debug('unknown chunk', chunk=chunk)
                 else:
-                    logger.debug('chunk', type=type(chunk), chunk=chunk)
-            logger.info('image created', struct_id=struct.id)
+                    logger.debug('unknown chunk type', type=type(chunk), chunk=chunk)
+            logger.info('Docker image created', struct_id=struct.id)
             return img.set_data(await self.dc.images.get(img.name))
 
     async def run_container(self, name, env={}, nocache=None, auto_remove=None, **kwargs):
