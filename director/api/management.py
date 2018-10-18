@@ -104,6 +104,7 @@ async def ask_state(name, **params):
 async def call(name, method, **params):
     """
     Call service method
+    Use __timeout param to set RPC response timeout
     """
     return await rpc.request(name, method, **params)
 
