@@ -16,3 +16,10 @@ bump-minor:
 build-dev:
 	docker build -t $(REPO):$(BR) .
 	docker push $(REPO):$(BR)
+
+build_image:
+	docker build -t director .
+	docker tag director rockstat/director:dev
+
+push_image_dev:
+	docker push rockstat/director:dev
