@@ -4,7 +4,7 @@ FMT_JSON_ROW = ' FORMAT JSONEachRow'
 def events_where():
     return """
         date BETWEEN today() -1 AND today()
-        AND timestamp > (toUInt64(now() - ((60 * 60) * 24)) * 1000)
+        AND timestamp > toUInt64(now() - 86400) * 1000
     """
 
 
