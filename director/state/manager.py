@@ -340,13 +340,11 @@ class StateManager:
         """
         Allocating dashboard position for container close to wanted
         """
-        logger.debug(f'{name} pos: wanted {col}x{row}')
         occupied = self._occupied(exclude=name)
-        logger.debug(f'occupied positions: {occupied}')
         for icol, irow in self._space_walk(int(col), int(row)):
-            logger.debug(f'> checking {icol}x{irow}')
             key = f"{icol}x{irow}"
             if key not in occupied:
+                logger.debug(f'Allocatted position', name=name, pos=f"{col}x{row}", occupied=occupied, allocated=f"{icol}x{irow}")
                 return dict(col=icol, row=irow)
 
     def _occupied(self, exclude=None):
