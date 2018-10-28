@@ -16,7 +16,15 @@ def isn(arg):
 
 
 def tar_image_cmd(path):
-    return ['tar', '-C', path, '-c', '-X', '.dockerignore', '.']
+    """
+    Method for build tar image from source path
+    """
+    # -c create archive mode
+    # -C directory In c and r mode, this changes the directory before adding the following files.
+    # -X filename Read a list of exclusion patterns from the specified file.
+    # --exclude pattern Do not process files or directories that match the specified pattern.
+    # tar -C ___ -c -X ___/.dockerignore .
+    return ['tar', '-C', f'{path}', '-c', '-X', f'{path}/.dockerignore', '.']
 
 
 def req_to_bool(v) -> None or bool:
