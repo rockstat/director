@@ -3,7 +3,7 @@ import ujson
 from prodict import Prodict as pdict
 from itertools import count
 
-from band import logger, settings, rpc, app
+from band import logger, settings, rpc, app, scheduler
 from band.constants import (
     NOTIFY_ALIVE, REQUEST_STATUS, OK, FRONTIER_SERVICE,
     DIRECTOR_SERVICE)
@@ -53,11 +53,11 @@ class StateManager:
         # looking for containers to request status
         for container in await dock.containers(struct=list):
             if container.running and container.native:
-                await app['scheduler'].spawn(
+                await scheduler.spawn(
                     self.request_app_state(container.name))
         
         # spawning state cleaner job
-        await app['scheduler'].spawn(self.clean_worker())
+        await scheduler.spawn(self.clean_worker())
 
         # handling autostart
         await self.handle_auto_start()
@@ -171,7 +171,7 @@ class StateManager:
         svc.clean_status()
         svc.set_status_override(STATUS_STARTING)
         coro = self._do_run_service(name)
-        await (app['scheduler'].spawn(coro) if no_wait else coro)
+        await (scheduler.spawn(coro) if no_wait else coro)
         return svc
 
     async def _do_run_service(self, name):
@@ -191,7 +191,7 @@ class StateManager:
         await band_config.set_rm(STARTED_SET, name)
         svc.set_status_override(STATUS_REMOVING)
         coro = self._do_remove_service(name)
-        await (app['scheduler'].spawn(coro) if no_wait else coro)
+        await (scheduler.spawn(coro) if no_wait else coro)
         return svc
 
     async def _do_remove_service(self, name):
@@ -204,7 +204,7 @@ class StateManager:
         await band_config.set_rm(STARTED_SET, name)
         svc.set_status_override(STATUS_STOPPING)
         coro = self._do_stop_service(name)
-        await (app['scheduler'].spawn(coro) if no_wait else coro)
+        await (scheduler.spawn(coro) if no_wait else coro)
         return svc
 
     async def _do_stop_service(self, name):
@@ -218,7 +218,7 @@ class StateManager:
             await band_config.set_add(STARTED_SET, name)
         svc.set_status_override(STATUS_STARTING)
         coro = self._do_start_service(name)
-        await (app['scheduler'].spawn(coro) if no_wait else coro)
+        await (scheduler.spawn(coro) if no_wait else coro)
         return svc
 
     async def _do_start_service(self, name):
@@ -230,7 +230,7 @@ class StateManager:
         svc = await self.get(name)
         svc.set_status_override(STATUS_RESTARTING)
         coro = self._do_restart_service(name)
-        await (app['scheduler'].spawn(coro) if no_wait else coro)
+        await (scheduler.spawn(coro) if no_wait else coro)
         return svc
 
     async def _do_restart_service(self, name):
@@ -306,7 +306,7 @@ class StateManager:
 
     def save_config(self, name, config):
         logger.info('saving', name=name, config=config)
-        job = app['scheduler'].spawn(band_config.save_config(name, config))
+        job = scheduler.spawn(band_config.save_config(name, config))
         asyncio.ensure_future(job)
 
     async def runned_set(self):
