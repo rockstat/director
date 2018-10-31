@@ -70,11 +70,14 @@ class StateManager:
                 await asyncio.sleep(5)
                 await self.resolve_docstatus_all()
                 await self.check_regs_changed()
+            except ConnectionRefusedError:
+                logger.error('Redis connection refused')
             except asyncio.CancelledError:
+                logger.warn('Asyncio cancelled')
                 break
             except Exception:
                 logger.exception('state initialize')
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
     async def handle_auto_start(self):
         services = await self.should_start()
