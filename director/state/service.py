@@ -181,6 +181,15 @@ class ServiceState(pdict):
         if 'title' in meta:
             self.set_title(meta.title)
 
+    def apply_meta(self):
+        if self.meta:
+            if nn(self.meta.protected):
+                self._protected = self.meta.protected
+            if nn(self.meta.persistent):
+                self._persistent = self.meta.persistent
+            if nn(self.meta.native):
+                self._native = self.meta.native
+
     def save_config(self):
         self._manager.save_config(self.name, self.config)
 
@@ -226,13 +235,8 @@ class ServiceState(pdict):
             self._dock = dockstate
             self._managed = True
             self._status_override = None
-            if self.meta:
-                if nn(self.meta.protected):
-                    self._protected = self.meta.protected
-                if nn(self.meta.persistent):
-                    self._persistent = self.meta.persistent
-                if nn(self.meta.native):
-                    self._native = self.meta.native
 
+            self.apply_meta()
+            
             if dockstate.running == True:
                 self._dock_ts = time()

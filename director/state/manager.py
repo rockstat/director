@@ -59,9 +59,18 @@ class StateManager:
         # spawning state cleaner job
         await scheduler.spawn(self.clean_worker())
 
+        await scheduler.spawn(self.images_loader())
+
         # handling autostart
         await self.handle_auto_start()
-        
+
+    async def images_loader(self):
+        while True:
+            await asyncio.sleep(15)
+            try:
+                await image_navigator.load()
+            except Exception:
+                logger.exception('ex')
 
     async def clean_worker(self):
         while True:
