@@ -282,10 +282,11 @@ class StateManager:
 
         # Loading state, config, meta
         status = await rpc.request(name, REQUEST_STATUS, **payload)
-        svc.set_appstate(status)
+        if status:
+            svc.set_appstate(dict(status))
 
     async def check_regs_changed(self):
-        new_hash = hash(ujson.dumps(self.registrations()))
+        new_hash = hash(str(self.registrations()))
         # If registrations changed front shold know about that
         if new_hash != self.registrations_hash:
             self.registrations_hash = new_hash
