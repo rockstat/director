@@ -5,7 +5,7 @@ from band import settings, rpc, logger, expose
 from band.constants import (
     NOTIFY_ALIVE, REQUEST_STATUS, OK,
     FRONTIER_SERVICE, DIRECTOR_SERVICE)
-
+from band.lib.response import BaseBandResponse
 from ..constants import (
     STATUS_RUNNING, STARTED_SET,
     SHARED_CONFIG_KEY)
@@ -107,7 +107,10 @@ async def call(name, method, **params):
     Use timeout__ param to set RPC response timeout
     """
     logger.info(f'Calling method "{method}" with params "{params}"')
-    return await rpc.request(name, method, **params)
+    res = await rpc.request(name, method, **params)
+    if isinstance(res, BaseBandResponse):
+        res = res._asdict()
+    return res
 
 
 """
