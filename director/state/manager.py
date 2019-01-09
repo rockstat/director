@@ -19,6 +19,7 @@ from ..docker_manager import DockerManager
 from .context import StateCtx
 from .service import ServiceState
 from ..image_navigator import ImageNavigator
+from .grid import is_valid_pos, ServicesGrid
 
 image_navigator = ImageNavigator(**settings)
 band_config = BandConfig(**settings)
@@ -27,13 +28,12 @@ dock = DockerManager(image_navigator=image_navigator, **settings)
 
 class StateManager:
     def __init__(self):
-        self.cols = 6
-        self.rows = 6
         self.timeout = 30
         self._state = dict()
         self._dock = None
         self._shared_config = dict()
         self.registrations_hash = ''
+        self.grid = ServicesGrid(self)
 
     """
     Lifecycle functions
@@ -113,6 +113,9 @@ class StateManager:
     def values(self):
         return self._state.values()
 
+    def __iter__(self):
+        return iter(self._state)
+
     def __contains__(self, name):
         return self.is_exists(name)
 
@@ -125,58 +128,55 @@ class StateManager:
 
     async def get(self, name, **kwargs):
         params = kwargs.pop('params', pdict())
-        wanted_pos = None
+        positions = []
+        
+        # Container env
         envs = []
+        if params.env:
+            envs.append(params.env)
 
-        if params.pos and params.pos.col and params.pos.row:
-            wanted_pos = dict(col=params.pos.col, row=params.pos.row)
+        if params.get('pos') and is_valid_pos(params.pos):
+            positions.append(params.pos)
 
         if name not in self._state:
             logger.debug('loading state', name=name)
             config = await self.load_config(name)
             meta = await image_navigator.image_meta(name)
-
-            if meta and meta.env:
-                envs.append(meta.env)
-
-            if config and config.env:
-                envs.append(config.env)
-
             svc = ServiceState(name=name, manager=self)
+
+            if config:
+                if config.get('env'):
+                    envs.append(config['env'])
+                if config.get('pos') and is_valid_pos(config['pos']):
+                    positions.append(config['pos'])
 
             if meta:
                 svc.set_meta(meta)
+                if meta.env:
+                    envs.append(meta.env)
+                if meta.get('pos') and is_valid_pos(meta['pos']):
+                    positions.append(meta['pos'])
 
-            if not wanted_pos and config and 'pos' in config:
-                if nn(config.pos.col) and nn(config.pos.row):
-                    wanted_pos = config.pos
-
-            if not wanted_pos and meta and 'pos' in meta:
-                if nn(meta.pos.col) and nn(meta.pos.row):
-                    wanted_pos = meta.pos
-
-            if not wanted_pos:
-                wanted_pos = dict(col=DEFAULT_COL, row=DEFAULT_ROW)
-
+            positions.append(self.grid.default_pos)
             self._state[name] = svc
 
         svc = self._state[name]
 
-        # Container env
-        if params.env:
-            envs.append(params.env)
-
+        # env variables
         if len(envs):
             svc.set_env(merge_dicts(*envs))
 
+        # passed build options
         if params.build_options:
             svc.set_build_opts(**params['build_options'])
 
-        if wanted_pos:
-            pos = self._allocate(name, **wanted_pos)
-            svc.set_pos(**pos)
+        # position allocation
+        if len(positions):
+            # TODO: pass list of positions
+            await self.set_pos(name, positions.pop(0), svc=svc)
 
         return svc
+
 
     async def run_service(self, name, no_wait=False):
         svc = await self.get(name)
@@ -253,6 +253,17 @@ class StateManager:
             await dock.restart_container(name)
             svc.clean_status()
             await self.check_regs_changed()
+
+    async def set_pos(self, name, pos, svc=None):
+        """
+        Try to allocate serive position at dashboard
+        """
+        if not svc:
+            svc = await self.get(name)
+        if is_valid_pos(pos):
+            pos = self.grid.allocate(name, col=pos.get('col'), row=pos.get('row'))
+            svc.set_pos(**pos)
+
 
     """
     State functions
@@ -344,43 +355,3 @@ class StateManager:
 
     async def should_start(self):
         return await band_config.set_get(STARTED_SET)
-
-    """
-    Dashboard tile
-    """
-
-    def _allocate(self, name, col, row):
-        """
-        Allocating dashboard position for container close to wanted
-        """
-        occupied = self._occupied(exclude=name)
-        for icol, irow in self._space_walk(int(col), int(row)):
-            key = f"{icol}x{irow}"
-            if key not in occupied:
-                logger.debug(f'Allocatted position', name=name, pos=f"{col}x{row}", occupied=occupied, allocated=f"{icol}x{irow}")
-                return dict(col=icol, row=irow)
-
-    def _occupied(self, exclude=None):
-        """
-        Building list of occupied positions
-        """
-        occupied = []
-        for srv in self._state.values():
-            if srv.name != exclude and nn(srv.pos.col) and nn(srv.pos.row):
-                occupied.append(srv.pos.to_s())
-        return occupied
-
-    def _space_walk(self, scol=0, srow=0):
-        """
-        Generator over all pissible postions starting from specified location
-        """
-        srow = int(srow)
-        scol = int(scol)
-        # first part
-        for rowi in range(srow, self.rows):
-            for coli in range(scol, self.cols):
-                yield coli, rowi
-        # back side
-        for rowi in range(0, srow):
-            for coli in range(0, scol):
-                yield coli, rowi

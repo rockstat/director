@@ -11,6 +11,17 @@ class ServicePostion(namedtuple('ServicePostion', 'col row')):
     __slots__ = ()
     def __str__(self):
         return f"{self.col}x{self.row}"
+    
+    def get(self, key):
+        return getattr(self, key)
+    
+    @classmethod
+    def from_string(cls, pos_string):
+        if pos_string:
+            col, row = pos_string.split('x')
+            if col != None and row != None:
+                return cls(col, row)
+        
 
 class BuildOptions(Prodict):
     nocache: bool
