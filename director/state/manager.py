@@ -2,6 +2,7 @@ import asyncio
 import ujson
 from prodict import Prodict as pdict
 from itertools import count
+from copy import deepcopy
 
 from band import logger, settings, rpc, app, scheduler
 from band.constants import (
@@ -167,8 +168,8 @@ class StateManager:
             svc.set_env(merge_dicts(*envs))
 
         # passed build options
-        if params.build_options:
-            svc.set_build_opts(**params['build_options'])
+        if params.build_opts:
+            svc.set_build_opts(**params.build_opts)
 
         # position allocation
         if len(positions):
@@ -190,7 +191,7 @@ class StateManager:
 
     async def _do_run_service(self, name):
         svc = await self.get(name)
-        env = self._shared_config.get('env', {}).copy()
+        env = deepcopy(self._shared_config.get('env', {}))
         env.update(svc.env)
         await dock.run_container(name, env=env, **svc.build_options)
         await band_config.set_add(STARTED_SET, name)

@@ -122,6 +122,11 @@ Containers management
 async def run(name, **req_params):
     """
     Create image and run new container with service
+    params:
+    pos - string contains prefered coordinates, for example "2x3" (col x row)
+    nocache - 
+    auto_remove -
+    env - 
     """
 
     if not image_navigator.is_native(name):
