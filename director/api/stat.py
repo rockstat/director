@@ -19,7 +19,9 @@ async def common_stat(**params):
             if stat_groups:
                 return ujson.loads(stat_groups)['data']
     except asyncio.TimeoutError:
-        logger.exception('ex')
+        logger.error('stat get error')
+    except asyncio.CancelledError:
+        pass
     return []
 
 
@@ -33,7 +35,9 @@ async def events_stat(**params):
             stat_events = await ch.select(query)
             return ujson.loads(stat_events)['data'] if stat_events else []
     except asyncio.TimeoutError:
-        logger.exception('ex')
+        logger.exception('stat get error')
+    except asyncio.CancelledError:
+        pass
     return []
 
 def clean_query(query):

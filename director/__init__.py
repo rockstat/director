@@ -9,6 +9,7 @@ state = StateManager()
 # Required state
 from .queries import *
 from .api import stat_api, manager_api
+from . import websocket
 
 @worker()
 async def __state_up():

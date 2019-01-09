@@ -30,7 +30,6 @@ class StateManager:
     def __init__(self):
         self.timeout = 30
         self._state = dict()
-        self._dock = None
         self._shared_config = dict()
         self.registrations_hash = ''
         self.grid = ServicesGrid(self)
@@ -44,7 +43,8 @@ class StateManager:
         await image_navigator.load()
         await self.load_config(SHARED_CONFIG_KEY)
         await self.resolve_docstatus_all()
-        
+        await dock.initialize()
+
         # initial fill autostart 
         started_present = await band_config.set_exists(STARTED_SET)
         if not started_present:
@@ -177,6 +177,8 @@ class StateManager:
 
         return svc
 
+    def logs_reader(self):
+        return dock.get_log_reader()
 
     async def run_service(self, name, no_wait=False):
         svc = await self.get(name)

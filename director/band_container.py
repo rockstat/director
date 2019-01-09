@@ -8,8 +8,6 @@ from band import logger
 from .constants import STATUS_RUNNING
 
 
-
-
 class BCP(Prodict):
     PublicPort: int
 
@@ -75,6 +73,14 @@ class BandContainer():
     def auto_removable(self):
         print('autoremove:', self.d.HostConfig.AutoRemove)
         return self.d.HostConfig.AutoRemove
+
+    @property
+    def id(self):
+        return self.d.Id
+
+    @property
+    def container(self):
+        return self.c
 
     @property
     def name(self):
