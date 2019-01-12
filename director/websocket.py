@@ -71,29 +71,5 @@ async def websocket_handler(request):
 
     return ws
 
-
-    # logs:
-    #   # unique event id
-    #   id: UInt64
-    #   # event date (UTC, server time)
-    #   date: Date
-    #   # event datetime (UTC, server time)
-    #   dateTime: DateTime
-    #   # source service
-    #   service: String
-    #   # stdout / stderr
-    #   source: String
-    #   # standard level number 10=debug 20=info etc..]
-    #   level: Int8
-    #   # name of level
-    #   levelName: String
-    #   # logger name
-    #   logger: String
-    #   # message part
-    #   message: String
-    #   # structured data part
-    #   data: String
-
-
 # Registering route
 dome.routes.append(web.RouteDef('GET', '/ws', websocket_handler, kwargs={}))
