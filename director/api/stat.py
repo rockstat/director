@@ -12,7 +12,6 @@ ch = AsyncClickHouse()
 async def common_stat(**params):
     where = stat_queries.events_where()
     query = stat_queries.groups(where) + stat_queries.FMT_JSON
-    logger.info(clean_query(query))
     try:
         async with timeout(1):
             stat_groups = await ch.select(query)
@@ -29,7 +28,6 @@ async def common_stat(**params):
 async def events_stat(**params):
     events_where = stat_queries.events_where()
     query = stat_queries.events(events_where) + stat_queries.FMT_JSON
-    logger.info(clean_query(query))
     try:
         async with timeout(1):
             stat_events = await ch.select(query)

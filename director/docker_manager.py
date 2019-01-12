@@ -1,42 +1,51 @@
+"""
+Rockstat Director docker module
+
+Useful links:
+https://ahmet.im/blog/docker-logs-api-binary-format-explained/
+http://aiodocker.readthedocs.io/en/latest/
+https://docs.docker.com/engine/api/v1.37/#operation/ContainerList
+https://docs.docker.com/engine/api/v1.24/#31-containers
+"""
 from pathlib import Path
 from collections import namedtuple
 import aiofiles
+import os
+import sys
+import stat
+import struct
+import re
 import asyncio
 import aiodocker
+import ujson
+import subprocess
 from aiodocker.exceptions import DockerError
 from aiodocker.logs import DockerLog
 from aiodocker.channel import Channel, ChannelSubscriber
 from aiodocker.containers import DockerContainer
-import os
-import sys
-import stat
-import re
-import codecs
 from prodict import Prodict as pdict
 from time import time
-import ujson
-import subprocess
 from typing import Set, List, Dict
 from pprint import pprint
+
 from band import logger, scheduler, loop
 from .image_navigator import ImageNavigator
 from .band_container import BandContainer, BandContainerBuilder
 from .constants import DEF_LABELS, STATUS_RUNNING
 from .helpers import req_to_bool, def_val
-import struct
+from .flake import Flake
+from .structs import LogRecord
 
+idgen = Flake()
+logs_sources = {
+    '1': 'stdin',
+    '2': 'stderr'
+}
 
 class DockerManager():
     image_navigator: ImageNavigator
     reserved_ports: Set
     container_params: pdict
-
-    """
-    Useful links:
-    http://aiodocker.readthedocs.io/en/latest/
-    https://docs.docker.com/engine/api/v1.37/#operation/ContainerList
-    https://docs.docker.com/engine/api/v1.24/#31-containers
-    """
 
     def __init__(self,
                  images,
@@ -59,38 +68,31 @@ class DockerManager():
         # common container params
         self.container_params = pdict.from_dict(container_params)
         self.image_params = pdict.from_dict(image_params)
-        # start load images
-        # asyncio.ensure_future(self.initialize())
 
     async def initialize(self):
         self.logs = Channel()
         coro = self.events_reader(self.dc, self.logs)
         await scheduler.spawn(coro)
 
-    def get_log_reader(self):
-        return self.logs.subscribe()
-
     async def logs_reader(self, docker, container: DockerContainer, channel: Channel, name, cid):
-        logger = container.logs
-        subscriber = logger.subscribe()
-        now = int(time())
-        await scheduler.spawn(logger.run(since=now))
+        log_reader = container.logs
+        subscriber = log_reader.subscribe()
+        unixts = int(time())
+        
+        await scheduler.spawn(log_reader.run(since=int(unixts/1000)))
         while True:
+
             log_record = await subscriber.get()
+            ts, id = idgen.take()
             if log_record is None:
-                print('closing docker logs reader')
-                # decoded = decoder.decode(b'', final=True)
-                # if decoded:
-                    # print(decoded)
+                logger.info('closing docker logs reader')
                 break
-            # decoded = decoder.decode()
-            # https://ahmet.im/blog/docker-logs-api-binary-format-explained/
-            now = int(time() * 1000)
             mv = memoryview(log_record)
-            data = bytes(mv[8:]).decode('utf-8', 'replace')
-            source = mv[0]
-            size = struct.unpack('>L', mv[4:8])[0]            
-            msg = (now, cid, name, source, size, data)
+            message = bytes(mv[8:]).decode('utf-8', 'replace')
+            source = logs_sources.get(str(mv[0]), '')
+            size = struct.unpack('>L', mv[4:8])[0]
+            
+            msg = LogRecord(id, ts, cid, name, source, size, message)
             await channel.publish(msg)
 
     async def events_reader(self, docker, logs):
@@ -109,28 +111,10 @@ class DockerManager():
                     cid = event['Actor']['ID']
                     container = await docker.containers.get(cid)
                     name = event['Actor']['Attributes']['name']
-                    pprint(event)
                     await scheduler.spawn(self.logs_reader(docker, container, logs, name, cid))
-                if event['Action'] == 'stop' and event['Type'] == 'container':
-                    pprint(event)
-		# case "start", "restart":
-		# 	go p.pumpLogs(event, backlog(), inactivityTimeout)
-		# case "rename":
-		# 	go p.rename(event)
-		# case "die":
-		# 	go p.update(event)
-                # Demonstrate simple event-driven container mgmt.
-                # if event['Actor']['ID'] == container._id:
-                    # if event['Action'] == 'start':
-                    #     await container.stop()
-                    #     print("=> killed {}".format(container._id[:12]))
-                    # elif event['Action'] == 'stop':
-                    #     await container.delete(force=True)
-                    #     print("=> deleted {}".format(container._id[:12]))
-                    # elif event['Action'] == 'destroy':
-                    #     print('=> done with this container!')
-                    #     break
 
+    def get_log_reader(self):
+        return self.logs.subscribe()
 
     async def containers(self, struct=dict, status=None, fullinfo=False, inband=True):
         filters = pdict()

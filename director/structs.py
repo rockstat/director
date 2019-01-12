@@ -1,11 +1,20 @@
 from collections import namedtuple
 from prodict import Prodict
-from typing import List
+from typing import List, NamedTuple
 
 IMAGE_CATEGORIES = Prodict(user='user', collection='collection', base='base')
 
 ImageObj = namedtuple('ImageObj', 'name category path')
 
+
+class LogRecord(NamedTuple):
+    id: int
+    ts: int
+    cid: str
+    name: str
+    source: str
+    size: int
+    message: str
 
 class ServicePostion(namedtuple('ServicePostion', 'col row')):
     __slots__ = ()
