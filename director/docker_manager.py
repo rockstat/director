@@ -88,6 +88,9 @@ class DockerManager():
                 logger.info('closing docker logs reader')
                 break
             mv = memoryview(log_record)
+            if len(log_record) < 5:
+                logger.warn('small shit', len=len(log_record))
+                break
             message = bytes(mv[8:]).decode('utf-8', 'replace')
             source = logs_sources.get(str(mv[0]), '')
             size = struct.unpack('>L', mv[4:8])[0]

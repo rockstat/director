@@ -4,6 +4,7 @@ env: "{{ENV}}"
 redis_dsn: "{{REDIS_DSN|default('redis://redis:6379')}}"
 ch_dsn: "{{CHP_DSN|default('http://default:default@host:9090')}}"
 data_dir: "{{DATA_DIR|default('/data')}}"
+etc_dir: /usr/platform/etc
 # initial
 initial_startup: {{INITIAL_STARTUP|default('[]')}}
 
