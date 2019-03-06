@@ -212,9 +212,7 @@ class DockerManager():
             return True
 
     async def create_image(self, img, img_options):
-        logger.debug(
-            f">>> Building image {img.name} from {img.path}. img_options",
-            img_options=img_options)
+        logger.debug("Building image", n=img.name, io=img_options, path=img.path)
         async with img.create(img_options) as builder:
             progress = pdict()
             struct = builder.struct()
@@ -239,6 +237,8 @@ class DockerManager():
                         logger.debug('unknown chunk', chunk=chunk)
                 else:
                     logger.debug('unknown chunk type', type=type(chunk), chunk=chunk)
+            if not struct.id:
+                raise Exception('Build process not completed')
             logger.info('Docker image created', struct_id=struct.id)
             return img.set_data(await self.dc.images.get(img.name))
 
