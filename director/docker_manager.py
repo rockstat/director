@@ -35,6 +35,7 @@ from .constants import DEF_LABELS, STATUS_RUNNING
 from .helpers import req_to_bool, def_val
 from .flake import Flake
 from .structs import LogRecord
+from base64 import b64encode
 
 idgen = Flake()
 logs_sources = {
@@ -81,16 +82,15 @@ class DockerManager():
         
         await scheduler.spawn(log_reader.run(since=int(unixts/1000)))
         while True:
-
             log_record = await subscriber.get()
             ts, id = idgen.take()
             if log_record is None:
                 logger.info('closing docker logs reader')
                 break
             mv = memoryview(log_record)
-            if len(log_record) < 5:
-                logger.warn('small shit', len=len(log_record))
-                break
+            if len(log_record) <= 0:
+                logger.warn('small shit', len=len(log_record), b64val=b64encode(log_record).decode())
+                continue
             message = bytes(mv[8:]).decode('utf-8', 'replace')
             source = logs_sources.get(str(mv[0]), '')
             size = struct.unpack('>L', mv[4:8])[0]
