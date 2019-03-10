@@ -88,7 +88,7 @@ class DockerManager():
                 logger.info('closing docker logs reader')
                 break
             mv = memoryview(log_record)
-            if len(log_record) <= 0:
+            if len(log_record) <= 8:
                 logger.warn('small shit', len=len(log_record), b64val=b64encode(log_record).decode())
                 continue
             message = bytes(mv[8:]).decode('utf-8', 'replace')
