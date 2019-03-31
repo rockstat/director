@@ -1,7 +1,7 @@
 FROM rockstat/band-base-py:latest
 
 LABEL maintainer="Dmitry Rodin <madiedinro@gmail.com>"
-LABEL band.service.version="0.7.3"
+LABEL band.service.version="0.7.4"
 LABEL band.service.title="Director service"
 LABEL band.service.def_position="0x0"
 LABEL band.service.protected="1"
