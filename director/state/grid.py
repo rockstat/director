@@ -7,8 +7,9 @@ from ..structs import ServicePostion
 
 def is_valid_pos(pos):
     if pos:
-        if isinstance(pos, ServicePostion) and pos.row is not None and pos.col is not None:
-            return True
+        if isinstance(pos, ServicePostion):
+            if pos.row is not None and pos.col is not None:
+                return True
         elif isinstance(pos, dict):
             if pos.get('col') is not None and pos.get('row') is not None:
                 return True
