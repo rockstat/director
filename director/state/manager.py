@@ -174,7 +174,9 @@ class StateManager:
         # position allocation
         if len(positions):
             # TODO: pass list of positions
-            await self.set_pos(name, positions.pop(0), svc=svc)
+            pos = positions.pop(0)
+            logger.debug('set_pos', p=pos)
+            await self.set_pos(name, pos, svc=svc)
 
         return svc
 
@@ -195,10 +197,8 @@ class StateManager:
         env.update(svc.env)
         await dock.run_container(name, env=env, **svc.build_options)
         await band_config.set_add(STARTED_SET, name)
-        logger.debug('svc', svc=dict(bo=svc.build_options, e=svc.env))
-        logger.debug('saving config')
+        logger.debug('service. saving config', svc=dict(bo=svc.build_options, e=svc.env))
         svc.save_config()
-        logger.debug('resolving svc status')
         await self.resolve_docstatus(name)
 
     async def remove_service(self, name, no_wait=False):

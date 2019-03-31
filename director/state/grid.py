@@ -10,7 +10,7 @@ def is_valid_pos(pos):
         if isinstance(pos, ServicePostion):
             return True
         elif isinstance(pos, dict):
-            if nn(pos.get('col')) and nn(pos.get('row')):
+            if pos.get('col') is not None and pos.get('row') is not None:
                 return True
 
 
