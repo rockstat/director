@@ -263,7 +263,7 @@ class StateManager:
         """
         if not svc:
             svc = await self.get(name)
-        if is_valid_pos(pos):
+        if pos and is_valid_pos(pos):
             pos = self.grid.allocate(name, col=pos.get('col'), row=pos.get('row'))
             svc.set_pos(**pos)
 
