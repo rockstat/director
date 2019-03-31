@@ -166,7 +166,7 @@ class ServiceState(pdict):
         self._env = env
 
     def set_pos(self, col, row):
-        if nn(col) and nn(row):
+        if col is not None and row is not None:
             self._pos.col = col
             self._pos.row = row
 
