@@ -148,9 +148,14 @@ class DockerManager():
     async def available_ports(self):
         available_ports = set(range(self.start_port, self.end_port))
         conts = await self.containers()
-        used_ports = set(p for cont in conts.values() for p in cont.ports)
-        logger.info(f"checking used ports {used_ports}")
-        
+        used_ports = set()
+
+        for cont in conts.values():
+            logger.info('container ports', cname=cont.name, cports=cont.ports)
+            for p in cont.ports:
+                used_ports.add(p)
+
+        logger.info(f"ports used summary", used_ports=used_ports)
         return available_ports - used_ports - self.reserved_ports
 
     def hold_ports(self, ports):
@@ -168,19 +173,21 @@ class DockerManager():
             if container:
                 await container.fill()
                 if container.state == 'running':
+                    container_autoremove = container.auto_removable()
                     logger.info("Stopping container")
                     await container.stop()
-                    if not container.auto_removable():
+                    if not container_autoremove:
                         await container.delete()
                 else:
                     await container.delete()
-
-                try:
-                    await container.wait(condition="removed")
-                except DockerError as e:
-                    logger.debug('Docker 404 received on wait request')
-                    if e.status != 404:
-                        raise e
+                
+                await asyncio.sleep(0.5)
+                # try:
+                #     await container.wait(condition="removed")
+                # except DockerError as e:
+                #     logger.debug('Docker 404 received on wait request')
+                #     if e.status != 404:
+                #         raise e
 
         except DockerError:
             logger.exception('container remove exc')
