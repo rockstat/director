@@ -148,13 +148,9 @@ class DockerManager():
     async def available_ports(self):
         available_ports = set(range(self.start_port, self.end_port))
         conts = await self.containers()
-        used_ports = set(
-            sum(
-                list(cont.ports for cont in conts.values()),
-                []
-            )
-        )
+        used_ports = set(p for cont in conts.values() for p in cont.ports)
         logger.info(f"checking used ports {used_ports}")
+        
         return available_ports - used_ports - self.reserved_ports
 
     def hold_ports(self, ports):

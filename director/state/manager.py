@@ -3,7 +3,7 @@ import ujson
 from prodict import Prodict as pdict
 from itertools import count
 from copy import deepcopy
-
+from typing import Coroutine
 from band import logger, settings, rpc, app, scheduler
 from band.constants import (
     NOTIFY_ALIVE, REQUEST_STATUS, OK, FRONTIER_SERVICE,
