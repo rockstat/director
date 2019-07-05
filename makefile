@@ -23,3 +23,7 @@ build_image:
 
 push_image_dev:
 	docker push rockstat/director:dev
+
+to_master:
+	@echo $(BR)
+	git checkout master && git merge $(BR) && git checkout $(BR)
