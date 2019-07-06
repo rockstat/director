@@ -52,7 +52,7 @@ class StateManager:
             await band_config.set_add(STARTED_SET, *settings.initial_startup)
 
         # looking for containers to request status
-        for container in await dock.containers(struct=list):
+        for container in await dock.containers():
             if container.running and container.native:
                 await scheduler.spawn(
                     self.request_app_state(container.name))
@@ -282,7 +282,7 @@ class StateManager:
             svc.set_dockstate(container.full_state())
 
     async def resolve_docstatus_all(self):
-        for container in await dock.containers(struct=list):
+        for container in await dock.containers():
             await self.resolve_docstatus(container.name)
 
     async def clean_status(self, name):

@@ -101,7 +101,7 @@ class DockerManager():
     async def events_reader(self, docker, logs):
         subscriber = docker.events.subscribe()
 
-        for bc in await self.containers(inband=False, status='running', struct=list):
+        for bc in await self.containers(inband=False, status='running'):
             container = bc.container
             await scheduler.spawn(self.logs_reader(docker, container, logs, bc.name, bc.id))
             logger.debug(f'creating logger for {bc.name}')
@@ -119,20 +119,28 @@ class DockerManager():
     def get_log_reader(self):
         return self.logs.subscribe()
 
-    async def containers(self, struct=dict, status=None, fullinfo=False, inband=True):
+    async def containers(self, struct=None, as_dict=False, status=None, fullinfo=False, inband=True):
         filters = pdict()
         if inband:
             filters.label = ['inband']
         if status:
             filters.status = [status]
+        
+        if struct:
+            logger.warn('Called containers list with deprecated argument `struct`. Use `as_dict` instead.')
+            if struct == dict:
+                as_dict = True
+            else:
+                as_dict = True
+        
         containers = await self.dc.containers.list(
             all=True, filters=ujson.dumps(filters))
         lst = list(BandContainer(c) for c in containers)
-        return lst if struct == list else {c.name: c for c in lst}
+        return lst if not as_dict else {c.name: c for c in lst}
 
     async def conts_list(self):
-        conts = await self.containers()
-        return [c.short_info for c in conts.values()]
+        cs = await self.containers()
+        return [c.short_info for c in cs]
 
     async def get(self, name):
         try:
@@ -150,12 +158,12 @@ class DockerManager():
         conts = await self.containers()
         used_ports = set()
 
-        for cont in conts.values():
+        for cont in conts:
             cports = cont.ports
             logger.info('container ports', cname=cont.name, cports=cports)
             if not cports:
                 logger.warn('no ports',  cname=cont.name, cports=cports)
-            for p in cports or []:
+            for p in cports:
                 used_ports.add(p)
 
         logger.info(f"ports used summary", used_ports=used_ports)
@@ -198,23 +206,23 @@ class DockerManager():
 
     async def stop_container(self, name):
         conts = await self.containers()
-        if name in conts:
-            logger.info(f"stopping container {name}")
-            await conts[name].stop()
+        if c in conts:
+            logger.info(f"stopping container {c.name}")
+            await c.stop()
             return True
 
     async def start_container(self, name):
         conts = await self.containers()
-        if name in conts:
-            logger.info(f"starting container {name}")
-            await conts[name].start()
+        if c in conts:
+            logger.info(f"starting container {c.name}")
+            await c.start()
             return True
 
     async def restart_container(self, name):
         conts = await self.containers()
-        if name in conts:
-            logger.info(f"restarting container {name}")
-            await conts[name].restart()
+        if c in conts:
+            logger.info(f"restarting container {c.name}")
+            await c.restart()
             return True
 
     async def create_image(self, img, img_options):

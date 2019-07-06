@@ -109,9 +109,9 @@ class BandContainer():
     @property
     def ports(self):
         if self.d.Ports:
-            return list(p.PublicPort for p in self.d.Ports)
+            return [p for p in [pcf.get('PublicPort') for pcf in self.d.get('Ports')] if p]
         if self.d.HostConfig.PortBindings:
-            return list(self.d.HostConfig.PortBindings.keys())
+            return [self.d.HostConfig.PortBindings.keys()]
         return []
 
     @property
