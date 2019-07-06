@@ -151,10 +151,11 @@ class DockerManager():
         used_ports = set()
 
         for cont in conts.values():
-            logger.info('container ports', cname=cont.name, cports=cont.ports)
-            if not cont.ports:
-                logger.warn('no ports',  cname=cont.name, cports=cont.ports)
-            for p in cont.ports:
+            cports = cont.ports
+            logger.info('container ports', cname=cont.name, cports=cports)
+            if not cports:
+                logger.warn('no ports',  cname=cont.name, cports=cports)
+            for p in cports or []:
                 used_ports.add(p)
 
         logger.info(f"ports used summary", used_ports=used_ports)
