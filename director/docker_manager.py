@@ -201,22 +201,25 @@ class DockerManager():
         return True
 
     async def stop_container(self, name):
-        conts = await self.containers()
-        if c in conts:
+        conts = await self.containers(as_dict=True)
+        if name in conts.keys():
+            c = conts[name]
             logger.info(f"stopping container {c.name}")
             await c.stop()
             return True
 
     async def start_container(self, name):
-        conts = await self.containers()
-        if c in conts:
+        conts = await self.containers(as_dict=True)
+        if name in conts.keys():
+            c = conts[name]
             logger.info(f"starting container {c.name}")
             await c.start()
             return True
 
     async def restart_container(self, name):
-        conts = await self.containers()
-        if c in conts:
+        conts = await self.containers(as_dict=True)
+        if name in conts.keys():
+            c = conts[name]
             logger.info(f"restarting container {c.name}")
             await c.restart()
             return True
