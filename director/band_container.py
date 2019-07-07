@@ -111,7 +111,7 @@ class BandContainer():
         if self.d.Ports:
             return [p for p in [pcf.get('PublicPort') for pcf in self.d.get('Ports')] if p]
         if self.d.HostConfig.PortBindings:
-            return [self.d.HostConfig.PortBindings.keys()]
+            return list(self.d.HostConfig.PortBindings.keys())
         return []
 
     @property
@@ -179,3 +179,9 @@ class BandContainer():
     def __getattr__(self, name):
         if hasattr(self.c, name):
             return getattr(self.c, name)
+
+    @classmethod
+    async def create_with_info(cls, *args, **kwargs):
+        inst = cls(*args, **kwargs)
+        await inst.show()
+        return inst

@@ -119,23 +119,19 @@ class DockerManager():
     def get_log_reader(self):
         return self.logs.subscribe()
 
-    async def containers(self, struct=None, as_dict=False, status=None, fullinfo=False, inband=True):
+    async def containers(self, as_dict=False, status=None, fullinfo=False, inband=True):
         filters = pdict()
         if inband:
             filters.label = ['inband']
         if status:
             filters.status = [status]
         
-        if struct:
-            logger.warn('Called containers list with deprecated argument `struct`. Use `as_dict` instead.')
-            if struct == dict:
-                as_dict = True
-            else:
-                as_dict = True
+        containers = await self.dc.containers.list(all=True, filters=ujson.dumps(filters))
+        lst = []
+        for c in containers:
+            bc = await BandContainer.create_with_info(c)
+            lst.append(bc)
         
-        containers = await self.dc.containers.list(
-            all=True, filters=ujson.dumps(filters))
-        lst = list(BandContainer(c) for c in containers)
         return lst if not as_dict else {c.name: c for c in lst}
 
     async def conts_list(self):
@@ -155,7 +151,7 @@ class DockerManager():
 
     async def available_ports(self):
         available_ports = set(range(self.start_port, self.end_port))
-        conts = await self.containers()
+        conts = await self.containers(fullinfo=True)
         used_ports = set()
 
         for cont in conts:
