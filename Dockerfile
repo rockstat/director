@@ -3,7 +3,7 @@ ARG BASE_CONTAINER=rockstat/band-base-py:3.7
 FROM $BASE_CONTAINER
 
 LABEL maintainer="Dmitry Rodin <madiedinro@gmail.com>"
-LABEL band.service.version="0.7.10"
+LABEL band.service.version="0.8.0"
 LABEL band.service.title="Director service"
 LABEL band.service.def_position="0x0"
 LABEL band.service.protected="1"
