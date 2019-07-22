@@ -20,7 +20,7 @@ services:
 script:
 # - cat Dockerfile | sed  "s/\:latest/\:$TAG/g" > Dockerfile.tag
 - echo "$PROJECT_NAME $IMAGE_NAME:$TAG"
-- docker build --build-arg BASE_CONTAINER="$BASE_CONTAINER:$BASE_TAG" -t $PROJECT_NAME -f Dockerfile .
+- docker build --build-arg BASE_CONTAINER="$BASE_CONTAINER$BASE_TAG" -t $PROJECT_NAME -f Dockerfile .
 
 after_script:
 - docker images
