@@ -9,30 +9,31 @@ class BandImageBuilder:
     def __init__(self, img, img_options):
         self.img = img
         self.img_options = img_options
-        dockerfile = self.img_options.get('dockerfile', DEFAULT_DOCKERFILE)
-        dockerfile_override = f'{dockerfile}.gen{GIT_IGNORE_POSTFIX}'
-        self.dockerfile_generator(
-            self.img.path, dockerfile, dockerfile_override)
-        self.dockerfile = dockerfile_override
+        self.dockerfile = self.img_options.get('dockerfile', DEFAULT_DOCKERFILE)
+        # dockerfile_override = f'{dockerfile}.gen{GIT_IGNORE_POSTFIX}'
+        # self.dockerfile_generator(
+        #     self.img.path, dockerfile, dockerfile_override)
+        # self.dockerfile = dockerfile_override
 
     async def __aenter__(self):
         self.p = subprocess.Popen(
             tar_image_cmd(self.img.path), stdout=subprocess.PIPE)
         return self
 
-    def dockerfile_generator(self, path, orig, override):
-        with open(f'{path}/{orig}') as f:
-            content = f.read()
-            for k, v in self.img_options.items():
-                content = content.replace('{' + k + '}', str(v))
-            with open(f'{path}/{override}', 'w') as nf:
-                nf.write(content)
+    # def dockerfile_generator(self, path, orig, override):
+    #     with open(f'{path}/{orig}') as f:
+    #         content = f.read()
+    #         for k, v in self.img_options.items():
+    #             content = content.replace('{' + k + '}', str(v))
+    #         with open(f'{path}/{override}', 'w') as nf:
+    #             nf.write(content)
 
     def struct(self):
         return pdict.from_dict({
             'tag': self.img.name,
             'fileobj': self.p.stdout,
             'encoding': 'identity',
+            'buildargs': self.img_options.get('buildargs', {}),
             'path_dockerfile': self.dockerfile,
             'nocache': self.img_options.get('nocache', False),
             'forcerm': self.img_options.get('forcerm', True),
