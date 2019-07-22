@@ -72,15 +72,15 @@ class DockerManager():
 
     async def initialize(self):
         self.logs = Channel()
-        coro = self.events_reader(self.dc, self.logs)
-        await scheduler.spawn(coro)
+        await scheduler.spawn(
+            self.events_reader(self.dc, self.logs))
 
     async def logs_reader(self, docker, container: DockerContainer, channel: Channel, name, cid):
         log_reader = container.logs
         subscriber = log_reader.subscribe()
         unixts = int(time())
         
-        await scheduler.spawn(log_reader.run(since=int(unixts/1000)))
+        await scheduler.spawn(log_reader.run(since=unixts))
         while True:
             log_record = await subscriber.get()
             ts, id = idgen.take()
@@ -106,15 +106,65 @@ class DockerManager():
             await scheduler.spawn(self.logs_reader(docker, container, logs, bc.name, bc.id))
             logger.debug(f'creating logger for {bc.name}')
 
+        """
+[00]             'Labels': {'band.base-py.version': '0.20.6',
+[00]                        'band.service.def_position': '2x2',
+[00]                        'band.service.title': 'MaxMind ip2geo',
+[00]                        'band.service.version': '0.4.0',
+[00]                        'inband': 'native',
+[00]                        'maintainer': 'Dmitry Rodin <madiedinro@gmail.com>'},
+
+
+[00] {'Action': 'start',
+[00]  'Actor': {'Attributes': {'band.base-py.version': '0.20.6',
+[00]                           'band.service.def_position': '2x2',
+[00]                           'band.service.title': 'MaxMind ip2geo',
+[00]                           'band.service.version': '0.4.0',
+[00]                           'image': 'sha256:02c07a3ebb63e704b66188079c12a2b92d6ec840f135479a42b4fc198d642a2d',
+[00]                           'maintainer': 'Dmitry Rodin <madiedinro@gmail.com>',
+[00]                           'name': 'gracious_rubin'},
+[00]            'ID': '0d2e755fca15b252a6f66d1a96b6502c12399d430e1b42cb16df6394fa0fd580'},
+[00]  'Type': 'container',
+[00]  'from': 'sha256:02c07a3ebb63e704b66188079c12a2b92d6ec840f135479a42b4fc198d642a2d',
+[00]  'id': '0d2e755fca15b252a6f66d1a96b6502c12399d430e1b42cb16df6394fa0fd580',
+[00]  'scope': 'local',
+[00]  'status': 'start',
+[00]  'time': datetime.datetime(2019, 7, 22, 4, 42, 17),
+[00]  'timeNano': 1563759737944087100}
+
+
+
+[00] {'Action': 'start',
+[00]  'Actor': {'Attributes': {'band.base-py.version': '0.20.6',
+[00]                           'band.service.def_position': '2x2',
+[00]                           'band.service.title': 'MaxMind ip2geo',
+[00]                           'band.service.version': '0.4.0',
+[00]                           'image': 'sha256:5d64fb3ec2eaf97ab0608fb9a14f97d5745258e7daecb07f17279a686d3991e1',
+[00]                           'inband': 'native',
+[00]                           'maintainer': 'Dmitry Rodin <madiedinro@gmail.com>',
+[00]                           'name': 'mmgeo'},
+[00]            'ID': '23cf76b129a894299f3e5c4b30f2cbd06aec52fc6dcb1ac6fd4943e000a1721d'},
+[00]  'Type': 'container',
+[00]  'from': 'sha256:5d64fb3ec2eaf97ab0608fb9a14f97d5745258e7daecb07f17279a686d3991e1',
+[00]  'id': '23cf76b129a894299f3e5c4b30f2cbd06aec52fc6dcb1ac6fd4943e000a1721d',
+[00]  'scope': 'local',
+[00]  'status': 'start',
+[00]  'time': datetime.datetime(2019, 7, 22, 4, 42, 26),
+[00]  'timeNano': 1563759746606291500}
+        """
         while True:
-                event = await subscriber.get()
-                if event is None:
-                    break
-                if event['Action'] == 'start' and event['Type'] == 'container':
-                    cid = event['Actor']['ID']
-                    container = await docker.containers.get(cid)
-                    name = event['Actor']['Attributes']['name']
-                    await scheduler.spawn(self.logs_reader(docker, container, logs, name, cid))
+            event = await subscriber.get()
+            if event is None:
+                break
+            if event['Action'] != 'start' or event['Type'] != 'container':
+                continue
+            # Not a band container
+            if 'inband' not in event['Actor']['Attributes']:
+                continue
+            cid = event['Actor']['ID']
+            container = await docker.containers.get(cid)
+            name = event['Actor']['Attributes']['name']
+            await scheduler.spawn(self.logs_reader(docker, container, logs, name, cid))
 
     def get_log_reader(self):
         return self.logs.subscribe()
@@ -176,7 +226,7 @@ class DockerManager():
     async def remove_container(self, name):
         # removing if running
         try:
-            container = await self.get(name)
+            container = BandContainer(await self.dc.containers.get(name))
             if container:
                 await container.fill()
                 if container.state == 'running':
@@ -196,8 +246,11 @@ class DockerManager():
                 #     if e.status != 404:
                 #         raise e
 
-        except DockerError:
-            logger.exception('container remove exc')
+        except DockerError as exc:
+            if exc.status == 404:
+                pass
+            else:
+                logger.exception('container remove exc')
         return True
 
     async def stop_container(self, name):
@@ -229,21 +282,20 @@ class DockerManager():
         async with img.create(img_options) as builder:
             progress = pdict()
             struct = builder.struct()
-            last = time()
+            last_time = time()
             async for chunk in await self.dc.images.build(**struct):
                 if isinstance(chunk, dict):
-                    chunk = pdict.from_dict(chunk)
-                    if chunk.aux:
-                        struct.id = chunk.aux.ID
+                    if chunk.get('aux'):
+                        struct.id = chunk.get('aux').get('ID')
                         logger.debug('chunk', chunk=chunk)
-                    elif chunk.status and chunk.id:
-                        progress[chunk.id] = chunk
-                        if time() - last > 1:
+                    elif chunk.get('status') and chunk.get('id'):
+                        progress[chunk.get('id')] = chunk
+                        if time() - last_time > 1:
                             logger.info("\nDocker build progress", progress=progress)
-                            last = time()
-                    elif chunk.stream:
+                            last_time = time()
+                    elif chunk.get('stream'):
                         # logger.debug('chunk', chunk=chunk)
-                        step = re.search(r'Step\s(\d+)\/(\d+)', chunk.stream)
+                        step = re.search(r'Step\s(\d+)\/(\d+)', chunk.get('stream'))
                         if step:
                             logger.debug('Docker build step ', groups=step.groups())
                     else:
@@ -268,7 +320,11 @@ class DockerManager():
 
         # building image
         service_img = self.image_navigator[name]
+
+        logger.info('Building image', name=name)
         await self.create_image(service_img, image_options)
+        logger.info('Removing active container', name=name)
+        
         await self.remove_container(name)
         await asyncio.sleep(0.1)
         # preparing to run

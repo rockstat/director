@@ -68,19 +68,9 @@ class ImageNavigator():
                 res.append(img)
         return res
 
-    async def __read_meta(self, path):
-        meta_config_path = f"{path}/meta.yml"
-        meta = dict(native=True)
-        if os.path.exists(meta_config_path) and os.path.isfile(
-                meta_config_path):
-            async with aiofiles.open(meta_config_path, mode='r') as f:
-                contents = await f.read()
-                meta.update(yaml.load(contents))
-        return meta
-
     async def __add_image(self, name, path, **kwargs):
         path = os.path.realpath(path)
-        meta = await self.__read_meta(path)
+        meta = {}
         key = kwargs.pop('key', None)
         img = BandImage(name=name, path=path, key=key, meta=meta, **kwargs)
         self._images[name] = img

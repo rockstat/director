@@ -1,4 +1,6 @@
-FROM rockstat/band-base-py:latest
+# FROM rockstat/band-base-py:latest
+ARG BASE_CONTAINER=rockstat/band-base-py:3.7
+FROM $BASE_CONTAINER
 
 LABEL maintainer="Dmitry Rodin <madiedinro@gmail.com>"
 LABEL band.service.version="0.7.10"

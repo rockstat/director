@@ -5,7 +5,6 @@ from typing import Dict
 from .constants import (DEF_LABELS, DEFAULT_DOCKERFILE, GIT_IGNORE_POSTFIX)
 from .helpers import tar_image_cmd
 
-
 class BandImageBuilder:
     def __init__(self, img, img_options):
         self.img = img
@@ -63,8 +62,7 @@ class BandImage(pdict):
         # meta['protected'] = meta['protected'] if 'protected' in meta else False
         # meta['persistent'] = meta['persistent'] if 'persistent' in meta else False
 
-        name_title = (kwargs.get('key', None) or 'unknown').title().replace(
-            '_', ' ').replace('-', ' ')
+        name_title = (kwargs.get('key', None) or 'unknown').title().replace('_', ' ').replace('-', ' ')
         kwargs['title'] = kwargs.get('title', name_title)
         kwargs['meta'] = meta
 
