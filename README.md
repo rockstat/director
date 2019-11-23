@@ -4,7 +4,9 @@
 
 ### Local with watching
 
-start redis
+#### Run Redis
+
+Containers interract via redis pub-sub.
 
 ```
 docker run -d \
@@ -15,7 +17,8 @@ docker run -d \
     redis:4-alpine
 ```
 
-install tools
+
+Setup `go` then add dependency `reflex`
 
 ```
 go get github.com/cespare/reflex

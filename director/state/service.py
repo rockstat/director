@@ -101,9 +101,9 @@ class ServiceState(pdict):
             mem=randint(1, 3),
             cpu=randint(1, 3),
             stat=dict(
-                sla=randint(98, 99),
-                mem=randint(1, 3),
-                cpu=randint(1, 3),
+                sla=0,
+                mem=0,
+                cpu=0,
             ),
             meta=dict(
                 native=self._native,

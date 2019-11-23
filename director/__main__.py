@@ -1,3 +1,8 @@
+# import tracemalloc
+
+# tracemalloc.start()
+
+
 from band import settings, start_server
 
 def main():

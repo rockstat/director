@@ -43,70 +43,8 @@ logs_sources = {
     '2': 'stderr'
 }
 
-class DockerManager():
-    image_navigator: ImageNavigator
-    reserved_ports: Set
-    container_params: pdict
 
-    def __init__(self,
-                 images,
-                 container_params,
-                 image_params,
-                 image_navigator,
-                 start_port=8900,
-                 end_port=8999,
-                 **kwargs):
-        # instance of low-level async docker client
-        self.dc = aiodocker.Docker()
-        # containers images navigator
-        self.image_navigator = image_navigator
-        # pool start port
-        self.start_port = start_port
-        # pool end port
-        self.end_port = end_port
-        # ports reservation
-        self.reserved_ports = set()
-        # common container params
-        self.container_params = pdict.from_dict(container_params)
-        self.image_params = pdict.from_dict(image_params)
-
-    async def initialize(self):
-        self.logs = Channel()
-        await scheduler.spawn(
-            self.events_reader(self.dc, self.logs))
-
-    async def logs_reader(self, docker, container: DockerContainer, channel: Channel, name, cid):
-        log_reader = container.logs
-        subscriber = log_reader.subscribe()
-        unixts = int(time())
-        
-        await scheduler.spawn(log_reader.run(since=unixts))
-        while True:
-            log_record = await subscriber.get()
-            ts, id = idgen.take()
-            if log_record is None:
-                logger.info('closing docker logs reader')
-                break
-            mv = memoryview(log_record)
-            if len(log_record) <= 8:
-                logger.warn('small shit', len=len(log_record), b64val=b64encode(log_record).decode())
-                continue
-            message = bytes(mv[8:]).decode('utf-8', 'replace')
-            source = logs_sources.get(str(mv[0]), '')
-            size = struct.unpack('>L', mv[4:8])[0]
-            
-            msg = LogRecord(id, ts, cid, name, source, size, message)
-            await channel.publish(msg)
-
-    async def events_reader(self, docker, logs):
-        subscriber = docker.events.subscribe()
-
-        for bc in await self.containers(inband=False, status='running'):
-            container = bc.container
-            await scheduler.spawn(self.logs_reader(docker, container, logs, bc.name, bc.id))
-            logger.debug(f'creating logger for {bc.name}')
-
-        """
+"""
 [00]             'Labels': {'band.base-py.version': '0.20.6',
 [00]                        'band.service.def_position': '2x2',
 [00]                        'band.service.title': 'MaxMind ip2geo',
@@ -151,7 +89,87 @@ class DockerManager():
 [00]  'status': 'start',
 [00]  'time': datetime.datetime(2019, 7, 22, 4, 42, 26),
 [00]  'timeNano': 1563759746606291500}
-        """
+"""
+
+class DockerManager():
+    image_navigator: ImageNavigator
+    reserved_ports: Set
+    container_params: pdict
+
+    def __init__(self,
+                 images,
+                 container_params,
+                 image_params,
+                 image_navigator,
+                 start_port=8900,
+                 end_port=8999,
+                 **kwargs):
+        # instance of low-level async docker client
+        self.dc = aiodocker.Docker()
+        # containers images navigator
+        self.image_navigator = image_navigator
+        # pool start port
+        self.start_port = start_port
+        # pool end port
+        self.end_port = end_port
+        # ports reservation
+        self.reserved_ports = set()
+        # common container params
+        self.container_params = pdict.from_dict(container_params)
+        self.image_params = pdict.from_dict(image_params)
+
+    async def initialize(self):
+        self.logs = Channel()
+        self.stats = Channel()
+
+        await scheduler.spawn(
+            self.events_reader(self.dc, self.logs))
+
+
+    async def stats_reader(self, container: DockerContainer,):
+            
+            async for stat in container.stats():
+                logger.debug('stat', s=stat)
+
+            # stat=dict(
+            #     sla=0,
+            #     mem=0,
+            #     cpu=0,
+            # ),
+
+
+    async def logs_reader(self, docker, container: DockerContainer, channel: Channel, name, cid):
+        log_reader = container.logs
+        subscriber = log_reader.subscribe()
+        unixts = int(time())
+        
+        await scheduler.spawn(log_reader.run(since=unixts))
+        while True:
+            log_record = await subscriber.get()
+            ts, id = idgen.take()
+            if log_record is None:
+                logger.info('closing docker logs reader')
+                break
+            mv = memoryview(log_record)
+            if len(log_record) <= 8:
+                logger.warn('small shit', len=len(log_record), b64val=b64encode(log_record).decode())
+                continue
+            message = bytes(mv[8:]).decode('utf-8', 'replace')
+            source = logs_sources.get(str(mv[0]), '')
+            size = struct.unpack('>L', mv[4:8])[0]
+            
+            msg = LogRecord(id, ts, cid, name, source, size, message)
+            await channel.publish(msg)
+
+    async def events_reader(self, docker, logs):
+        subscriber = docker.events.subscribe()
+
+        for bc in await self.containers(inband=False, status='running'):
+            container = bc.container
+            await scheduler.spawn(self.logs_reader(docker, container, logs, bc.name, bc.id))
+            await scheduler.spawn(self.stats_reader(container))
+            
+            logger.debug(f'creating logger for {bc.name}')
         while True:
             event = await subscriber.get()
             if event is None:
@@ -283,7 +301,7 @@ class DockerManager():
             progress = pdict()
             struct = builder.struct()
             last_time = time()
-            async for chunk in await self.dc.images.build(**struct):
+            async for chunk in self.dc.images.build(**struct):
                 if isinstance(chunk, dict):
                     if chunk.get('aux'):
                         struct.id = chunk.get('aux').get('ID')
