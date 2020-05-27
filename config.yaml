@@ -25,6 +25,7 @@ image_params:
   band-base-py-image: "{{BAND_PY_IMAGE}}"
   buildargs:
     BASE_CONTAINER: "{{BAND_PY_IMAGE}}"
+    DOMAIN: "{{DOMAIN}}"
 
 container_params:
   network: "{{NETWORK|default('custom')}}"

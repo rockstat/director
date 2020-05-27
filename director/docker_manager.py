@@ -333,8 +333,14 @@ class DockerManager():
         )
         container_options = dict(auto_remove=def_val(auto_remove, False))
 
-        logger.info('called run container (kwargs will not used)', env=env,
-                    func_args=dict(auto_remove=auto_remove, nocache=nocache, kwargs=kwargs), image_options=image_options, container_options=container_options)
+        logger.info('called run container (kwargs will not used)',
+                    env=env,
+                    func_args=dict(
+                        auto_remove=auto_remove, 
+                        nocache=nocache, 
+                        kwargs=kwargs),
+                    image_options=image_options, 
+                    container_options=container_options)
 
         # building image
         service_img = self.image_navigator[name]
